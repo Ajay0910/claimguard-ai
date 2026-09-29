@@ -166,7 +166,7 @@ const location = useLocation();
 
 ### Audit Findings
 - **Zero Modal/Dialog Components:** A grep search for `modal`, `dialog`, `Dialog`, `Modal` across `src/` yielded **0 matching files**.
-- **Violation of R2 Pattern:** Requirement R2 explicitly dictates:
+- **Conflict of R2 Pattern:** Requirement R2 explicitly dictates:
   > *"Implement contextual sidebars (drawers) for claim details instead of full page navigations."*
 - Currently in `src/components/dashboard/ClaimsTable.jsx` (lines 420-423, 725, 830):
   ```javascript

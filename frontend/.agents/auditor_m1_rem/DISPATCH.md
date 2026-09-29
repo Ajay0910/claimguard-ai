@@ -14,4 +14,4 @@
 Conduct forensic integrity audit on the changes made in Milestone 1 Iteration 2:
 - Inspect `src/services/api.js`, `src/App.jsx`, `src/components/common/StatusBadge.jsx`, `tests/tier1-feature-coverage.test.mjs`.
 - Check for any hardcoded test results, facade stubs, dummy implementations, or cheated assertions.
-- Deliver your report to `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\auditor_m1_rem\handoff.md` with a clear verdict: `CLEAN` or `INTEGRITY VIOLATION`.
+- Deliver your report to `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\auditor_m1_rem\handoff.md` with a clear verdict: `CLEAN` or `INTEGRITY CONFLICT`.

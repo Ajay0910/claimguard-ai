@@ -54,8 +54,13 @@ class ReportGenerator:
         total_claimed = float(getattr(bill, 'total_amount', 0.0))
         insurer_approved = float(getattr(rejection, 'approved_amount', 0.0))
         
-        underpayment = sum(float(getattr(f, 'monetary_impact', 0.0) or 0.0) for f in tier1_findings)
-        correct_payable = insurer_approved + underpayment
+        impacts = [getattr(f, 'monetary_impact', None) for f in tier1_findings]
+        if any(impact is None for impact in impacts) and len(impacts) > 0:
+            underpayment = None
+            correct_payable = None
+        else:
+            underpayment = sum(float(i) for i in impacts) if impacts else 0.0
+            correct_payable = insurer_approved + underpayment
 
         report_id = str(uuid.uuid4())
         generated_at = datetime.datetime.utcnow().isoformat()
@@ -111,13 +116,21 @@ class ReportGenerator:
         
         Use formal Indian legal letter format.
         """
-        findings = [r for r in analysis.rule_verdicts if r.status == "FAIL"]
+        findings = [
+            r for r in analysis.rule_verdicts 
+            if r.status == "FAIL" and len(r.evidence_entries) > 0
+        ]
+        
         if not findings:
-            return "No grounds for appeal found. Claim processing appears correct."
+            return "No grounds for appeal found, or findings lack sufficient validated evidence ledger entries."
             
         template = self.env.from_string(APPEAL_LETTER_TEMPLATE)
         
-        total_impact = sum(float(getattr(f, 'monetary_impact', 0.0) or 0.0) for f in findings)
+        impacts = [getattr(f, 'monetary_impact', None) for f in findings]
+        if any(impact is None for impact in impacts) and len(impacts) > 0:
+            total_impact = None
+        else:
+            total_impact = sum(float(i) for i in impacts) if impacts else 0.0
         
         policy_number = getattr(policy, 'policy_number', 'N/A')
         claim_number = getattr(rejection, 'claim_number', 'N/A')

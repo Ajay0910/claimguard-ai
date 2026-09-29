@@ -5,7 +5,7 @@
 **Date**: 2026-09-17T18:48:00Z  
 **Milestone**: Milestone 2: Enterprise Dashboard & Visualizations (Features 6, 7, and 8)  
 **Verdict**: **APPROVE**  
-**Integrity Status**: **PASS** (Zero integrity violations; genuine implementation)
+**Integrity Status**: **PASS** (Zero integrity conflicts; genuine implementation)
 
 ---
 
@@ -92,7 +92,7 @@
    - `FinancialWaterfallChart` (Lines 303–448): Pure React/SVG layout with dashed reference gridlines, floating monetary pills, and hover tooltips.
      - *Observation on lines 633 & 312*: In `DashboardCharts.jsx:633`, `steps={data.waterfallSteps}` is passed to `FinancialWaterfallChart`. Inside `FinancialWaterfallChart:312`, `if (steps) return steps;` executes immediately. Because `data.waterfallSteps` is always truthy, the dynamic recalculation based on `stats` (lines 314–326) is never reached!
      - *Observation on line 435*: In `FinancialWaterfallChart:435-443`, the footer accesses `dynamicSteps[0].amount`, `dynamicSteps[2].amount`, and `dynamicSteps[3].amount` assuming an array length of at least 4. If fewer steps or an empty array is passed, an unhandled `TypeError` is thrown.
-   - `RuleViolationBarChart` (Lines 453–605): Sortable by Frequency vs Recoverable INR. Progress bars with gradient fills, Tier 1/2 badges, win rate pills, and clipboard copy button with toast.
+   - `RuleConflictBarChart` (Lines 453–605): Sortable by Frequency vs Recoverable INR. Progress bars with gradient fills, Tier 1/2 badges, win rate pills, and clipboard copy button with toast.
 
 4. **`src/components/dashboard/ClaimsTable.jsx` (Lines 1–965)**:
    - Full-text search across Claim ID, Patient, Hospital, Policy Number, and Deduction Type.

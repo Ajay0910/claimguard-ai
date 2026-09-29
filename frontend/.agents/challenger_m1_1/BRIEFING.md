@@ -44,7 +44,7 @@ Empirically challenge Milestone 1 foundations: run build and test, stress-test A
 - **Hypotheses tested**:
   1. Default parameter `backendStats = {}` fails when passed explicit `null` -> CONFIRMED (throws TypeError).
   2. `normalizeClaims` crashes on sparse arrays containing `null` -> CONFIRMED (throws TypeError).
-  3. `normalizeAnalysisResult` corrupts clean claims having `rule_verdicts: []` -> CONFIRMED (overwrites with 4 fake mock violations).
+  3. `normalizeAnalysisResult` corrupts clean claims having `rule_verdicts: []` -> CONFIRMED (overwrites with 4 fake mock conflicts).
   4. `normalizeAppealDraft(null)` lacks `content` key expected by `Analysis.jsx` -> CONFIRMED.
   5. In-memory mutation leakage in `normalizeAnalysisResult` -> CONFIRMED.
   6. `npm test` tests false duplicate instead of production code -> CONFIRMED.

@@ -21,7 +21,7 @@ Direct empirical observations from inspecting the codebase, reproducing the issu
      - Bug 1 [HIGH]: `normalizeStats(null)` threw `TypeError: Cannot read properties of null (reading 'total_recovered_amount')`.
      - Bug 2 [HIGH]: `normalizeAppealDraft(null)` returned `mockAppealDraft` lacking `content` and `appeal_letter` aliases expected by `Analysis.jsx`.
      - Bug 3 [MEDIUM]: `normalizeClaims([null])` threw `TypeError: Cannot read properties of null (reading 'id')`.
-     - Bug 4 [MEDIUM]: `normalizeAnalysisResult` replaced legitimate clean claims having `rule_verdicts: []` with 4 mock violations because of `core.rule_verdicts.length > 0` check.
+     - Bug 4 [MEDIUM]: `normalizeAnalysisResult` replaced legitimate clean claims having `rule_verdicts: []` with 4 mock conflicts because of `core.rule_verdicts.length > 0` check.
      - Bug 5 [LOW]: `normalizeAnalysisResult(null)` shallow-spread `mockAnalysisResult`, leaking in-memory object mutations across requests.
      - Bug 6 [LOW]: `normalizeAppealDraft({ appeal_text: '' })` falsy coalescing discarded intentional empty strings and returned mock text.
 3. **UI / Styling Polish Issues:**
@@ -93,7 +93,7 @@ Direct empirical observations from inspecting the codebase, reproducing the issu
 1. **Root Cause Analysis:**
    - The test suite decoupling masked normalizer defects because `tier1-feature-coverage.test.mjs` tested local helper functions rather than the exported functions from `src/services/api.js`.
    - Default parameter syntax `(backendStats = {})` only evaluates on `undefined`, leading to uncaught TypeErrors when callers or API handlers passed `null`.
-   - The check `core.rule_verdicts.length > 0` conflated "no violations detected" with "missing analysis data", unintentionally inventing mock fraud verdicts for clean claims.
+   - The check `core.rule_verdicts.length > 0` conflated "no conflicts detected" with "missing analysis data", unintentionally inventing mock fraud verdicts for clean claims.
    - Shallow copying of `mockAnalysisResult` retained object reference sharing, allowing accidental cross-request pollution in long-running Node/browser sessions.
 2. **Implementation Strategy:**
    - Apply minimal, surgical corrections directly to target lines without refactoring or breaking existing contracts.
@@ -114,7 +114,7 @@ No caveats. All requested changes were strictly within authorized files, verifie
 ## 4. Conclusion
 
 Milestone 1 foundation defects and UI polish issues have been completely remediated:
-- `src/services/api.js` is fully resilient against `null`, sparse arrays, clean-claim empty violation lists, mutation leaks, and Node ESM resolution.
+- `src/services/api.js` is fully resilient against `null`, sparse arrays, clean-claim empty conflict lists, mutation leaks, and Node ESM resolution.
 - `src/App.jsx` uses valid `backdrop-blur-sm` Tailwind class.
 - `src/components/common/StatusBadge.jsx` spins correctly for `EXTRACTING` and `PROCESSING`.
 - `tests/tier1-feature-coverage.test.mjs` validates production code directly.

@@ -1,5 +1,6 @@
 from ..schemas.hospital_bill import HospitalBill
 from ..schemas.forensics_result import ConsistencyFlag
+from ..rules import get_val
 
 # Mapping of diagnoses to expected medicine categories and tests
 DIAGNOSIS_MEDICINE_MAP = {
@@ -36,10 +37,13 @@ class ConsistencyChecker:
         Cross-reference diagnosis against billed medicines and tests.
         """
         flags = []
-        if not bill.diagnosis or not bill.line_items:
+        diag = get_val(bill, 'diagnosis')
+        line_items = get_val(bill, 'line_items')
+        
+        if not diag or not line_items:
             return flags
             
-        diag_lower = self._normalize(bill.diagnosis)
+        diag_lower = self._normalize(diag)
         matched_diag = None
         for key in DIAGNOSIS_MEDICINE_MAP:
             if key in diag_lower:
@@ -53,7 +57,7 @@ class ConsistencyChecker:
         expected_tests = DIAGNOSIS_MEDICINE_MAP[matched_diag]['expected_tests']
         unexpected_meds = DIAGNOSIS_MEDICINE_MAP[matched_diag]['unexpected_medicines']
         
-        billed_items_text = " ".join([self._normalize(item.description) for item in bill.line_items])
+        billed_items_text = " ".join([self._normalize(get_val(item, 'description', '')) for item in line_items])
         
         for unexp in unexpected_meds:
             if unexp in billed_items_text:

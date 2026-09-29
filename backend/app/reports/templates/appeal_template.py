@@ -1,5 +1,7 @@
 def indian_currency_filter(value: float) -> str:
     """Format float into Indian currency string, e.g., 1,50,000.00"""
+    if value is None:
+        return "N/A"
     s = f"{value:.2f}"
     parts = s.split('.')
     int_part = parts[0]
@@ -45,10 +47,10 @@ I, {{ patient_name }}, holder of health insurance policy number {{ policy_number
    - Insurer's Position: {{ finding.finding }}
    - Correct Position: {{ finding.appeal_recommendation }}
    - Regulatory Basis: {{ finding.regulatory_citation }}
-   - Monetary Impact: ₹{{ finding.monetary_impact | indian_currency }}
+   - Monetary Impact: {% if finding.monetary_impact is none %}N/A{% else %}₹{{ finding.monetary_impact | indian_currency }}{% endif %}
 {% endfor %}
 
-**TOTAL UNDERPAYMENT: ₹{{ total_impact | indian_currency }}**
+**TOTAL UNDERPAYMENT: {% if total_impact is none %}N/A{% else %}₹{{ total_impact | indian_currency }}{% endif %}**
 
 **LEGAL BASIS:**
 {{ legal_basis }}
@@ -76,10 +78,10 @@ Claim Summary:
 {{ claim_summary }}
 
 Monetary Impact Summary:
-- Total Claimed: ₹{{ monetary_impact_summary.total_claimed | indian_currency }}
-- Insurer Approved: ₹{{ monetary_impact_summary.insurer_approved | indian_currency }}
-- Correct Payable: ₹{{ monetary_impact_summary.correct_payable | indian_currency }}
-- Underpayment: ₹{{ monetary_impact_summary.underpayment | indian_currency }}
+- Total Claimed: {% if monetary_impact_summary.total_claimed is none %}N/A{% else %}₹{{ monetary_impact_summary.total_claimed | indian_currency }}{% endif %}
+- Insurer Approved: {% if monetary_impact_summary.insurer_approved is none %}N/A{% else %}₹{{ monetary_impact_summary.insurer_approved | indian_currency }}{% endif %}
+- Correct Payable: {% if monetary_impact_summary.correct_payable is none %}N/A{% else %}₹{{ monetary_impact_summary.correct_payable | indian_currency }}{% endif %}
+- Underpayment: {% if monetary_impact_summary.underpayment is none %}N/A{% else %}₹{{ monetary_impact_summary.underpayment | indian_currency }}{% endif %}
 
 Tier 1 Findings:
 {% for finding in tier1_findings %}

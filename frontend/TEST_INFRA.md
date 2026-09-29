@@ -55,7 +55,7 @@ The testing harness provides full coverage for all 16 system capabilities define
 │   Apollo Room Rent Appeal • Fraud Detection • Clean Claim • Network Drop│
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     TIER 3: COMBINATIONS & MATRICES                     │
-│   Cross-Module Interactions • Multi-Rule Violations • Multi-Doc Matrix │
+│   Cross-Module Interactions • Multi-Rule Conflicts • Multi-Doc Matrix │
 │   Tamper Chains • Clinical Contradiction Matrix • Hash Chain Ledger     │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     TIER 2: BOUNDARY CASES & ADVERSARIAL                │
@@ -96,7 +96,7 @@ The testing harness provides full coverage for all 16 system capabilities define
 - **Objective**: Test combinatorial matrices and interaction between disparate pipeline sub-systems.
 - **Scope**:
   - Multi-document matrix: Single document upload vs dual documents vs full trio (Hospital Bill + Policy + Rejection letter).
-  - Concurrent multi-rule violations: Simultaneous Proportionate Deduction failure + Moratorium breach + Mental Health parity violation with cumulative impact summation.
+  - Concurrent multi-rule conflicts: Simultaneous Proportionate Deduction failure + Moratorium breach + Mental Health parity conflict with cumulative impact summation.
   - Forensic tampering vector combination: Stripped EXIF metadata (`MISSING_EXIF`, LOW) coupled with editing software detection (`Photoshop`, HIGH) and elevated ELA score (82.4).
   - Clinical consistency matrix: Mismatched diagnoses and drug/procedure line items (e.g. Cataract surgery paired with Cardiology medication).
   - Cryptographic SHA-256 Audit Trail: Valid hash chain verification ($H_n = \text{SHA256}(H_{n-1} + \text{data})$) vs tampered block detection.

@@ -12,7 +12,7 @@ Also read PROJECT.md at:
 c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\orchestrator_4\PROJECT.md
 
 MANDATORY INTEGRITY WARNING:
-DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
+DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity conflicts WILL be detected and your work WILL be rejected.
 
 Detailed specifications and implementation diffs have been prepared by three Explorers. Read their reports:
 1. c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\explorer_m7_motion\report.md

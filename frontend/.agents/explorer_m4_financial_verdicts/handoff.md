@@ -43,7 +43,7 @@ Direct code observations from codebase inspection:
 - **No Tier 1 vs Tier 2 Classification**: In `src/components/VerdictCard.jsx` (lines 13–116), rules are displayed homogenously without distinguishing between **Tier 1 (Mandatory Statutory Rules)** and **Tier 2 (Clinical/Policy Conditions)**.
 - **No Relative Delta Bar**: Lines 75–89 display insurer vs correct amounts as static side-by-side text boxes, omitting any visual proportion bar showing the haircut gap.
 - **No One-Click Statutory Citation Copy**: While `verdict.regulatory_citation` is displayed (line 91), there is no interactive clipboard copy button or visual feedback.
-- **No Rule Filtering Tabs**: The parent view iterates all verdicts with `result.rule_verdicts?.map(...)` (Analysis.jsx:203) without category filtering tabs (All, Tier 1 Statutory, Tier 2 Policy, Violations Only).
+- **No Rule Filtering Tabs**: The parent view iterates all verdicts with `result.rule_verdicts?.map(...)` (Analysis.jsx:203) without category filtering tabs (All, Tier 1 Statutory, Tier 2 Policy, Conflicts Only).
 
 ### 1.3 Backend & Mock Data Alignment
 - In `backend/app/rules/rule_registry.py` (lines 5–15), rules are registered with explicit tiers:
@@ -71,7 +71,7 @@ Direct code observations from codebase inspection:
 1. **Information Architecture Gap**: Medical claim auditors require an immediate, high-impact executive reconciliation before drilling into legal clauses. Presenting isolated text fields fails enterprise healthcare audit standards.
 2. **Mathematical Cohesion**:
    $$\text{Billed Gross} = \text{Insurer Approved} + \text{Disallowed Deductions}$$
-   $$\text{Disallowed Deductions} = \text{Contested \& Recoverable (Statutory Violations)} + \text{Legitimate Patient Deductible (Co-pay / Non-medical)}$$
+   $$\text{Disallowed Deductions} = \text{Contested \& Recoverable (Statutory Conflicts)} + \text{Legitimate Patient Deductible (Co-pay / Non-medical)}$$
    $$\text{Correct Allowable Amount} = \text{Insurer Approved} + \text{Contested \& Recoverable}$$
    Visualizing this via a stacked proportion bar and waterfall comparison card immediately communicates the recovery yield (+62.5% on initial payout in the demo case).
 3. **Statutory Tiering Rationale**: In Indian healthcare disputes, Tier 1 rules (Parliamentary Acts like Insurance Act § 45, Mental Healthcare Act § 21(4), and IRDAI May 2024 Master Circular) override arbitrary policy clauses. Tier 2 rules govern contractual limits. Clear visual segregation with filter tabs enables auditors to generate legal grievance filings instantly.
@@ -94,7 +94,7 @@ Direct code observations from codebase inspection:
 #### Purpose & Capabilities:
 - High-impact 4-metric executive financial summary (Billed Amount, Insurer Approved, Total Disallowed, Contested & Recoverable).
 - Interactive stacked proportion bar with percentage distribution and clinical color tokens (`#0284C7` Sky/Approved, `#10B981` Emerald/Recoverable, `#94A3B8` Slate/Legitimate Deductible).
-- Discrepancy breakdown cards itemizing specific deduction violations with IRDAI statutory references.
+- Discrepancy breakdown cards itemizing specific deduction conflicts with IRDAI statutory references.
 - INR Currency formatting via `Intl.NumberFormat('en-IN')` with financial monospace fonts (`font-financial`).
 
 #### Complete Ready-to-Implement JSX Template:
@@ -388,17 +388,17 @@ export default function FinancialDelta({
             <span>Itemized Statutory Discrepancy Breakdown</span>
           </h3>
           <span className="text-xs text-slate-500">
-            {result.rule_verdicts?.filter((v) => v.status === 'FAIL').length || 2} actionable violations identified
+            {result.rule_verdicts?.filter((v) => v.status === 'FAIL').length || 2} actionable conflicts identified
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Discrepancy Card 1: Proportionate Deduction Violation */}
+          {/* Discrepancy Card 1: Proportionate Deduction Conflict */}
           <div className="card-enterprise p-5 border-l-4 border-l-rose-500 flex flex-col justify-between">
             <div>
               <div className="flex items-start justify-between gap-2">
                 <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                  Tier 1 Statutory Violation
+                  Tier 1 Statutory Conflict
                 </span>
                 <span className="text-sm font-extrabold text-rose-600 font-financial">
                   +₹32,000.00
@@ -431,7 +431,7 @@ export default function FinancialDelta({
             <div>
               <div className="flex items-start justify-between gap-2">
                 <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                  Tier 1 Statutory Violation
+                  Tier 1 Statutory Conflict
                 </span>
                 <span className="text-sm font-extrabold text-amber-700 font-financial">
                   +₹10,500.00
@@ -474,11 +474,11 @@ export default function FinancialDelta({
   * **Tier 1 (Mandatory Statutory Rules)**: Governed by parliamentary statute or IRDAI Master Circulars.
   * **Tier 2 (Clinical/Policy Conditions)**: Governed by insurer contract terms, CGHS benchmarks, or clinical criteria.
 - Dynamic Visual Delta Bar: Shows relative width of Insurer Approved vs Correct Allowable Amount, with the difference shaded as the **Recoverable Underpayment**.
-- Severity Badges: `FAIL` (Rose: "Statutory Violation"), `NEEDS_REVIEW` (Amber: "Review Needed"), `PASS` (Emerald: "Compliant / Verified"), `SKIPPED` (Slate: "Not Applicable").
+- Severity Badges: `FAIL` (Rose: "Statutory Conflict"), `NEEDS_REVIEW` (Amber: "Review Needed"), `PASS` (Emerald: "Compliant / Verified"), `SKIPPED` (Slate: "Not Applicable").
 - AI Confidence indicator (e.g. `98% Confidence`).
 - One-Click IRDAI Statutory Clause Copy Button with interactive clipboard feedback (`Copied!` badge and notification).
 - Expandable Rationale Drawer with calculation comparison and appeal action recommendation.
-- Category Filter Tabs Bar: Enables filtering cards by `All Rules`, `Tier 1 Statutory`, `Tier 2 Policy`, or `Violations Only`.
+- Category Filter Tabs Bar: Enables filtering cards by `All Rules`, `Tier 1 Statutory`, `Tier 2 Policy`, or `Conflicts Only`.
 
 #### Complete Ready-to-Implement JSX Template:
 ```jsx
@@ -544,7 +544,7 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
       case 'FAIL':
         return {
           icon: XCircle,
-          label: 'Statutory Violation',
+          label: 'Statutory Conflict',
           badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
           borderClass: 'border-rose-200',
           accentColor: '#E11D48',
@@ -814,13 +814,13 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
 export function VerdictsFilterTabs({
   activeFilter = 'ALL',
   onFilterChange = () => {},
-  counts = { all: 4, tier1: 3, tier2: 1, violations: 2 },
+  counts = { all: 4, tier1: 3, tier2: 1, conflicts: 2 },
 }) {
   const tabs = [
     { id: 'ALL', label: 'All Rules', count: counts.all },
     { id: 'TIER1', label: 'Tier 1 Statutory', count: counts.tier1 },
     { id: 'TIER2', label: 'Tier 2 Policy', count: counts.tier2 },
-    { id: 'VIOLATIONS', label: 'Violations Only', count: counts.violations, highlight: true },
+    { id: 'CONFLICTS', label: 'Conflicts Only', count: counts.conflicts, highlight: true },
   ];
 
   return (
@@ -915,7 +915,7 @@ export default function Analysis() {
   // Active Workspace Tab State: 'financial' | 'forensics' | 'audit' | 'appeal'
   const [activeTab, setActiveTab] = useState('financial');
 
-  // Rule Verdicts Filter State: 'ALL' | 'TIER1' | 'TIER2' | 'VIOLATIONS'
+  // Rule Verdicts Filter State: 'ALL' | 'TIER1' | 'TIER2' | 'CONFLICTS'
   const [verdictFilter, setVerdictFilter] = useState('ALL');
 
   // Query & Loading State
@@ -955,7 +955,7 @@ export default function Analysis() {
   const filteredVerdicts = useMemo(() => {
     if (!result?.rule_verdicts) return [];
     return result.rule_verdicts.filter((v) => {
-      if (verdictFilter === 'VIOLATIONS') return v.status === 'FAIL';
+      if (verdictFilter === 'CONFLICTS') return v.status === 'FAIL';
       if (verdictFilter === 'TIER1') {
         return (
           v.tier === 1 ||
@@ -999,7 +999,7 @@ export default function Analysis() {
             !v.rule_name?.toLowerCase().includes('moratorium') &&
             !v.rule_name?.toLowerCase().includes('mental health'))
       ).length,
-      violations: list.filter((v) => v.status === 'FAIL').length,
+      conflicts: list.filter((v) => v.status === 'FAIL').length,
     };
   }, [result?.rule_verdicts]);
 

@@ -80,14 +80,14 @@ Inside `DashboardCharts.jsx`:
     <div className="lg:col-span-5"><StatusDonutChart /></div>
     <div className="lg:col-span-7"><FinancialWaterfallChart /></div>
   </div>
-  <RuleViolationBarChart />
+  <RuleConflictBarChart />
 </div>
 ```
 
 ### Limitations of Current Layout
 1. **Lack of Visual Hierarchy**: Total Recovered Amount (`₹14,28,500`) is the primary value proposition of ClaimGuard AI, yet it receives identical visual real estate to Disallowance Rate (`18.4%`) and Processed Claims (`128`).
 2. **Disconnected Alert Banner**: The alert banner sits as an isolated stripe between header and KPIs, disrupting visual flow. In enterprise healthcare dashboards, active dispute alerts should integrate directly as an urgent Bento triage card or an integrated status marquee.
-3. **Information Fragmentation**: The screen requires extensive scrolling to correlate rule violations with the claims affected in the table below.
+3. **Information Fragmentation**: The screen requires extensive scrolling to correlate rule conflicts with the claims affected in the table below.
 
 ### Proposed Bento Grid Layout Architecture
 A cohesive Bento Grid uses an asymmetric 12-column responsive layout with standardized card borders, micro-interactions, and visual density:
@@ -107,8 +107,8 @@ A cohesive Bento Grid uses an asymmetric 12-column responsive layout with standa
 │ SVG Donut + Interactive Filter Slices   │ Billed -> Insurer Cut -> Recoverable -> Net     │
 │ (col-span-12 lg:col-span-5)             │ (col-span-12 lg:col-span-7)                     │
 ├─────────────────────────────────────────┴─────────────────────────────────────────────────┤
-│ [BENTO TILE 6: STATUTORY ENGINE & VIOLATION LEVERAGE]                                     │
-│ Top IRDAI Rule Violations: Proportionate Scaling (Cl 12.3), Room Rent (Cl 4.2), Sec 45    │
+│ [BENTO TILE 6: STATUTORY ENGINE & CONFLICT LEVERAGE]                                     │
+│ Top IRDAI Rule Conflicts: Proportionate Scaling (Cl 12.3), Room Rent (Cl 4.2), Sec 45    │
 │ Frequency vs Recoverable INR Sort | One-click Citation Copying                            │
 │ (col-span-12)                                                                             │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
@@ -264,9 +264,9 @@ Use URL query parameter `?inspect=CLM-XXXXX` combined with React state:
             </div>
           </div>
 
-          {/* Detected Violations Highlights */}
+          {/* Detected Conflicts Highlights */}
           <div>
-            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">Key Statutory Violations</h4>
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">Key Statutory Conflicts</h4>
             <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-bold text-rose-800">
                 <AlertTriangle className="w-4 h-4 text-rose-600" />

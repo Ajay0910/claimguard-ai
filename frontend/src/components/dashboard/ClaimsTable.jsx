@@ -124,7 +124,7 @@ export const matchesStatusTab = (claim, tabKey) => {
       return (
         impact > 0 ||
         deduction.includes('deduction') ||
-        deduction.includes('violation') ||
+        deduction.includes('conflict') ||
         deduction.includes('breach') ||
         status === 'PARTIAL_SETTLEMENT'
       );

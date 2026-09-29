@@ -8,7 +8,6 @@ except ImportError:
     np = None
     CV2_AVAILABLE = False
 from PIL import Image
-from pdf2image import convert_from_path
 
 from typing import Any
 
@@ -16,7 +15,9 @@ def preprocess_image(image_path: str) -> Any:
     """Preprocess image for OCR. Returns numpy array if cv2 available, else PIL Image."""
     if not CV2_AVAILABLE:
         # Fallback: return PIL image for VLM path
-        return Image.open(image_path)
+        img = Image.open(image_path)
+        img.load() # Force load to release file lock on Windows
+        return img
 
     # Load image
     image = cv2.imread(image_path)
@@ -68,15 +69,18 @@ def preprocess_image(image_path: str) -> Any:
 
 def pdf_to_images(pdf_path: str) -> list[str]:
     """Convert PDF pages to temporary image files."""
-    images = convert_from_path(pdf_path)
+    import fitz
+    doc = fitz.open(pdf_path)
     image_paths = []
     
     temp_dir = os.path.dirname(pdf_path)
-    for i, img in enumerate(images):
+    for i, page in enumerate(doc):
+        pix = page.get_pixmap(dpi=150)
         path = os.path.join(temp_dir, f"temp_page_{i}.png")
-        img.save(path, "PNG")
+        pix.save(path)
         image_paths.append(path)
         
+    doc.close()
     return image_paths
 
 def prepare_document(file_path: str) -> list[Any]:
@@ -93,3 +97,4 @@ def prepare_document(file_path: str) -> list[Any]:
         return processed
     else:
         return [preprocess_image(file_path)]
+

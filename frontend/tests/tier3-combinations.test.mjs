@@ -1,7 +1,7 @@
 /**
  * Tier 3: Combinations & Cross-Module Integration Tests
  * Validates interaction matrices: multi-document combinations, concurrent statutory rule
- * violations, multi-vector forensic tampering, clinical contradictions, and SHA-256 hash chains.
+ * conflicts, multi-vector forensic tampering, clinical contradictions, and SHA-256 hash chains.
  */
 
 import {
@@ -91,8 +91,8 @@ describe('Tier 3.1: Multi-Document Intake Matrix & State Transitions', () => {
   });
 });
 
-describe('Tier 3.2: Concurrent Multi-Rule Violations & Financial Reconciliation', () => {
-  it('FEAT-07 & FEAT-09: Aggregates multiple statutory violations in single claim', () => {
+describe('Tier 3.2: Concurrent Multi-Rule Conflicts & Financial Reconciliation', () => {
+  it('FEAT-07 & FEAT-09: Aggregates multiple statutory conflicts in single claim', () => {
     // Scenario: Insurer violated BOTH Proportionate Deduction AND Mental Health Parity
     const verdicts = [
       {

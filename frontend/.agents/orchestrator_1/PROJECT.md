@@ -2,8 +2,8 @@
 
 ## Architecture
 - **Framework**: React 18 with Vite 6, Tailwind CSS 3.4, React Router v6, TanStack Query v5, Axios, Lucide React, Hot Toast.
-- **Design System**: Enterprise Healthcare standards — high information density, clinical slate-900/navy hierarchy, medical teal/cyan accents, and standardized status semantics (Emerald/Pass, Amber/Discrepancy, Rose/Violation-Fraud, Blue/Analysis).
-- **Visualization Layer**: Interactive SVG/CSS & charting components for financial waterfalls, donut status distributions, rule violation metrics, ELA tamper gauges, and CGHS benchmark bars.
+- **Design System**: Enterprise Healthcare standards — high information density, clinical slate-900/navy hierarchy, medical teal/cyan accents, and standardized status semantics (Emerald/Pass, Amber/Discrepancy, Rose/Conflict-Fraud, Blue/Analysis).
+- **Visualization Layer**: Interactive SVG/CSS & charting components for financial waterfalls, donut status distributions, rule conflict metrics, ELA tamper gauges, and CGHS benchmark bars.
 - **Module Boundaries & Code Layout**:
   - `src/types/index.ts`: Unified TypeScript definitions covering all backend schemas (Claim, HospitalBill, InsurancePolicy, RejectionLetter, RuleVerdict, ForensicsResult, AuditTrail).
   - `src/services/api.js`: Resilient API client with data normalization, fallback resilience, and support for all backend endpoints.
@@ -23,7 +23,7 @@
 | 4 | Enterprise App Shell & Navigation | Desktop Topbar (breadcrumbs, global claim search, auditor profile, tenant badge), active route sidebar, live API status pill | M1 | Survey R1 |
 | 5 | Resilient API Client & Schema Normalizer | Correct field mapping (`total_recovered_amount`, `appeal_text`, unwrapped `result.result`, mock resilience) | M1 | Survey R1/API |
 | 6 | Executive Financial KPI Cards | 4 enhanced metrics with sparklines, INR formatting, variance pills, recovery velocity | M2 | Survey R1 |
-| 7 | Dashboard Visualizations | Interactive charts: Status distribution donut, Recoverable amount waterfall, Rule violation frequency | M2 | Survey R2 |
+| 7 | Dashboard Visualizations | Interactive charts: Status distribution donut, Recoverable amount waterfall, Rule conflict frequency | M2 | Survey R2 |
 | 8 | Enterprise Claims Data Table | Search by Claim ID/Patient, status filter tabs, sortable columns, multi-doc status badges (BILL/POL/REJ), pagination | M2 | Survey R1 |
 | 9 | Dual-Mode Upload Studio | Smart multi-file dropzone (batch drop 3 files at once) + non-blocking guided stepper mode | M3 | Survey R3 |
 | 10 | Document Metadata & Extraction Inspection | Document cards showing file size, format chips, thumbnail icon, replace/remove actions | M3 | Survey R3 |

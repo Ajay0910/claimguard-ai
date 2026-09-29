@@ -19,7 +19,7 @@ Direct observations from codebase inspection, grep searches, and test executions
   4. `<DashboardCharts claims={claims} stats={stats} onSelectStatusFilter={handleSelectStatusFilter} />` (lines 204–208)
   5. `<ClaimsTable ... />` inside `<div id="claims-table-section">` (lines 211–220)
 - `src/components/dashboard/ExecutiveKpiCards.jsx` (lines 32–89): Renders 4 homogeneous cards inside `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5`.
-- `src/components/dashboard/DashboardCharts.jsx` (lines 628–651): Renders a 12-column grid (`StatusDonutChart` in `lg:col-span-5` and `FinancialWaterfallChart` in `lg:col-span-7`) followed by a full-width `RuleViolationBarChart`.
+- `src/components/dashboard/DashboardCharts.jsx` (lines 628–651): Renders a 12-column grid (`StatusDonutChart` in `lg:col-span-5` and `FinancialWaterfallChart` in `lg:col-span-7`) followed by a full-width `RuleConflictBarChart`.
 
 ### B. Claim Click Behavior & Navigation
 - `src/components/dashboard/ClaimsTable.jsx` (line 420):

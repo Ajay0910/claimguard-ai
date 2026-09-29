@@ -23,12 +23,12 @@ class FactorAttribution(BaseModel):
     weight: float  # factor weight in overall composite calculation
     description: str
 
-class CompositeFraudScore(BaseModel):
-    overall_fraud_score: float  # 0.0 to 100.0
-    risk_tier: str  # "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+class AnomalyAssessment(BaseModel):
+    anomaly_density_score: float  # 0.0 to 100.0
+    review_status: str  # "NEEDS_REVIEW" | "FLAGGED FOR REVIEW" | "CLEAN"
     confidence: float  # 0.0 to 1.0
     factor_attributions: List[FactorAttribution] = Field(default_factory=list)
-    top_risk_drivers: List[str] = Field(default_factory=list)
+    top_anomalies: List[str] = Field(default_factory=list)
     summary: str = ""
 
 class ELAResult(BaseModel):
@@ -67,7 +67,7 @@ class ForensicsResult(BaseModel):
     claim_id: str = ""
     ela_result: Optional[ELAResult] = None
     pdf_inspection_result: Optional[PDFInspectionResult] = None
-    composite_fraud_score: Optional[CompositeFraudScore] = None
+    anomaly_assessment: Optional[AnomalyAssessment] = None
     metadata_flags: list[MetadataFlag] = []
     bill_anomalies: list[BillAnomalyFlag] = []
     bill_anomaly_flags: list[BillAnomalyFlag] = []

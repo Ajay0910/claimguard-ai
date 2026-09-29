@@ -29,7 +29,7 @@ Implement Milestone 2: Enterprise Dashboard & Visualizations (Features 6, 7, and
 
 ## Key Decisions Made
 - Implemented `MetricCard.jsx` with dual SVG spline curve + activity bars to guarantee 100% backwards compatibility with existing clamping tests while rendering smooth SVG cubic curves.
-- Created `DashboardCharts.jsx` housing `StatusDonutChart`, `FinancialWaterfallChart`, and `RuleViolationBarChart` with pure React/SVG/Tailwind.
+- Created `DashboardCharts.jsx` housing `StatusDonutChart`, `FinancialWaterfallChart`, and `RuleConflictBarChart` with pure React/SVG/Tailwind.
 - Implemented cross-filtering from Donut chart slice clicks directly to `ClaimsTable` filter tabs.
 - Created `ClaimsTable.jsx` with multi-field search, status filter tabs with counts, 6 sortable columns, tripartite document badges (`BILL`, `POL`, `REJ`), INR formatting, and responsive pagination.
 - Overhauled `Dashboard.jsx` with realistic loading skeletons, `<ErrorState>` fallback with retry, priority dispute alert banner, and URL search query parameter synchronization.

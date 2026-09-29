@@ -63,7 +63,7 @@ async def upload_document(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Claim not found")
 
     upload_dir = settings.UPLOAD_DIR if hasattr(settings, 'UPLOAD_DIR') else os.path.join("data", "uploads")
-    file_path, mime_type, size_bytes = await save_upload(file, upload_dir)
+    file_path, mime_type, size_bytes, doc_hash = await save_upload(file, upload_dir)
 
     document_id = str(uuid.uuid4())
     new_doc = Document(
@@ -74,11 +74,17 @@ async def upload_document(
         file_path=file_path,
         content_type=mime_type,
         file_size_bytes=size_bytes,
+        document_hash=doc_hash,
         created_at=datetime.utcnow()
     )
     db.add(new_doc)
     
-    await AuditTrail.log(db, claim_id, "DOCUMENT_UPLOADED", {"filename": file.filename, "document_type": document_type})
+    await AuditTrail.log(db, claim_id, "DOCUMENT_UPLOADED", {
+        "filename": file.filename, 
+        "document_type": document_type,
+        "document_hash": doc_hash,
+        "file_size_bytes": size_bytes
+    })
     
     await db.commit()
     
@@ -86,6 +92,7 @@ async def upload_document(
         "claim_id": claim_id,
         "document_id": document_id,
         "filename": file.filename,
+        "document_hash": doc_hash,
         "status": "success"
     }
 
@@ -104,6 +111,7 @@ async def list_documents(claim_id: str, db: AsyncSession = Depends(get_db)) -> l
             "document_type": doc.document_type,
             "filename": doc.filename,
             "file_path": doc.file_path,
+            "document_hash": doc.document_hash,
             "created_at": doc.created_at.isoformat() if doc.created_at else None,
             "extracted_data": doc.extracted_data
         }

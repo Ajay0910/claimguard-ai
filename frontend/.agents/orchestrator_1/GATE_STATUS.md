@@ -19,7 +19,7 @@ Gate Result: **FAIL** (challenger_m1_1 REJECT: normalizer edge-case crashes & te
    - Line 8: Add `.js` to import: `from './mockData.js';`
    - Line 19: Use `const s = backendStats || {};` to prevent TypeError on `null`.
    - Line 37: Add `.filter(Boolean)` in `rawClaims.filter(Boolean).map(...)`.
-   - Line 77: Use `Array.isArray(core.rule_verdicts) ? core.rule_verdicts : mockAnalysisResult.rule_verdicts;` to preserve clean claims with `[]` violations.
+   - Line 77: Use `Array.isArray(core.rule_verdicts) ? core.rule_verdicts : mockAnalysisResult.rule_verdicts;` to preserve clean claims with `[]` conflicts.
    - Line 86: In `normalizeAppealDraft(null)`, return `{ ...mockAppealDraft, content: mockAppealDraft.appeal_text, appeal_letter: mockAppealDraft.appeal_text }`.
 2. In `src/App.jsx`:
    - Line 100: Change `backdrop-blur-xs` to `backdrop-blur-sm`.

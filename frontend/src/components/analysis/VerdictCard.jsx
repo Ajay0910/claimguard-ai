@@ -61,7 +61,7 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
       case 'FAIL':
         return {
           icon: XCircle,
-          label: 'Statutory Violation',
+          label: 'Statutory Conflict',
           badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
           borderClass: 'border-rose-200',
           accentColor: '#E11D48',
@@ -225,7 +225,7 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
                 <span className="font-medium text-slate-500">
                   Statutory Recovery Delta:{' '}
                   <strong className="text-emerald-700 font-financial">
-                    +{formatInr(impact || Math.max(0, correctCalc - insurerCalc))}
+                    +{formatInr(impact)}
                   </strong>
                 </span>
               </div>
@@ -343,13 +343,13 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
 export function VerdictsFilterTabs({
   activeFilter = 'ALL',
   onFilterChange = () => {},
-  counts = { all: 4, tier1: 3, tier2: 1, violations: 2 },
+  counts = { all: 4, tier1: 3, tier2: 1, conflicts: 2 },
 }) {
   const tabs = [
     { id: 'ALL', label: 'All Rules', count: counts.all ?? 0 },
     { id: 'TIER1', label: 'Tier 1 Statutory', count: counts.tier1 ?? 0 },
     { id: 'TIER2', label: 'Tier 2 Policy', count: counts.tier2 ?? 0 },
-    { id: 'VIOLATIONS', label: 'Violations Only', count: counts.violations ?? 0, highlight: true },
+    { id: 'CONFLICTS', label: 'Conflicts Only', count: counts.conflicts ?? 0, highlight: true },
   ];
 
   return (

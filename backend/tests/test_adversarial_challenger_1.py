@@ -2,7 +2,7 @@
 Adversarial Stress Test Harness - Challenger 1
 Targeting:
 1. PDFInspector (backend/app/forensics/pdf_inspector.py)
-2. ExplainableFraudScorer (backend/app/forensics/fraud_scorer.py)
+2. AnomalyScorer (backend/app/forensics/fraud_scorer.py)
 
 Designed to stress-test:
 - Corrupted byte streams, 0-byte files, non-PDF payloads, fake %%EOF chaining
@@ -16,7 +16,7 @@ import os
 import tempfile
 import pytest
 from app.forensics.pdf_inspector import PDFInspector, PDFInspectionResult, PDFRevisionInfo
-from app.forensics.fraud_scorer import ExplainableFraudScorer, CompositeFraudScore, FactorAttribution
+from app.forensics.fraud_scorer import AnomalyScorer, AnomalyAssessment, FactorAttribution
 from app.schemas.forensics_result import BillAnomalyFlag, ConsistencyFlag, MetadataFlag
 
 
@@ -138,31 +138,31 @@ class TestPDFInspectorAdversarial:
 
 
 # ===========================================================================
-# 2. Adversarial Stress Tests: ExplainableFraudScorer
+# 2. Adversarial Stress Tests: AnomalyScorer
 # ===========================================================================
 
-class TestExplainableFraudScorerAdversarial:
+class TestAnomalyScorerAdversarial:
     @pytest.fixture
     def scorer(self):
-        return ExplainableFraudScorer()
+        return AnomalyScorer()
 
     def test_all_none_inputs(self, scorer):
-        """All inputs None must return valid CompositeFraudScore with baseline risk."""
+        """All inputs None must return valid AnomalyAssessment with baseline risk."""
         result = scorer.compute_score(None, None, None, None, None)
-        assert isinstance(result, CompositeFraudScore)
-        assert 0.0 <= result.overall_fraud_score <= 100.0
-        assert result.overall_fraud_score == 2.0
-        assert result.risk_tier == "LOW"
+        assert isinstance(result, AnomalyAssessment)
+        assert 0.0 <= result.anomaly_density_score <= 100.0
+        assert result.anomaly_density_score == 2.0
+        assert result.review_status == "CLEAN"
         assert 0.0 <= result.confidence <= 1.0
         assert len(result.factor_attributions) > 0
 
     def test_empty_dictionaries_and_lists(self, scorer):
         """Empty dictionaries and lists must return calibrated low risk."""
         result = scorer.compute_score({}, [], [], [], {})
-        assert isinstance(result, CompositeFraudScore)
-        assert 0.0 <= result.overall_fraud_score <= 100.0
-        assert result.overall_fraud_score == 2.0
-        assert result.risk_tier == "LOW"
+        assert isinstance(result, AnomalyAssessment)
+        assert 0.0 <= result.anomaly_density_score <= 100.0
+        assert result.anomaly_density_score == 2.0
+        assert result.review_status == "CLEAN"
 
     def test_extreme_negative_values(self, scorer):
         """Extreme negative values must be floored safely at 0.0, not negative."""
@@ -172,9 +172,9 @@ class TestExplainableFraudScorerAdversarial:
             clinical_consistency=[],
             metadata_flags=[]
         )
-        assert isinstance(result, CompositeFraudScore)
-        assert 0.0 <= result.overall_fraud_score <= 100.0
-        assert result.risk_tier == "LOW"
+        assert isinstance(result, AnomalyAssessment)
+        assert 0.0 <= result.anomaly_density_score <= 100.0
+        assert result.review_status == "CLEAN"
 
     def test_extreme_multi_crore_values(self, scorer):
         """Multi-crore / astronomical inputs must be strictly capped at 100.0."""
@@ -204,12 +204,12 @@ class TestExplainableFraudScorerAdversarial:
                 MetadataFlag(description="Photoshop", severity="HIGH")
             ] * 10
         )
-        assert isinstance(result, CompositeFraudScore)
-        assert 0.0 <= result.overall_fraud_score <= 100.0
-        assert result.overall_fraud_score == 100.0
-        assert result.risk_tier == "CRITICAL"
+        assert isinstance(result, AnomalyAssessment)
+        assert 0.0 <= result.anomaly_density_score <= 100.0
+        assert result.anomaly_density_score == 100.0
+        assert result.review_status == "FLAGGED FOR REVIEW"
 
-    def test_risk_tier_boundary_alignment(self, scorer):
+    def test_review_status_boundary_alignment(self, scorer):
         """Risk tiers must strictly align with score boundaries:
         - [0, 25) -> LOW
         - [25, 50) -> MEDIUM
@@ -218,8 +218,8 @@ class TestExplainableFraudScorerAdversarial:
         """
         # Baseline is 2.0 -> LOW
         res_low = scorer.compute_score(None, None, None, None)
-        assert res_low.overall_fraud_score < 25.0
-        assert res_low.risk_tier == "LOW"
+        assert res_low.anomaly_density_score < 25.0
+        assert res_low.review_status == "CLEAN"
 
     def test_provider_synergy_trigger_boundary(self, scorer):
         """Provider systemic risk attribution only triggers when both billing > 0.4 and clinical > 0.4."""
@@ -270,18 +270,18 @@ class TestExplainableFraudScorerAdversarial:
     def test_nan_tamper_score_vulnerability(self, scorer):
         """
         EMPIRICAL BUG CHALLENGE:
-        Passing float('nan') as tamper_score propagates NaN into overall_fraud_score,
-        violating invariant 0.0 <= overall_fraud_score <= 100.0, and defaults risk_tier to 'CRITICAL'.
+        Passing float('nan') as tamper_score propagates NaN into anomaly_density_score,
+        violating invariant 0.0 <= anomaly_density_score <= 100.0, and defaults review_status to 'CRITICAL'.
         """
         result = scorer.compute_score(
             forensics_result={"ela_result": {"tamper_score": float("nan")}}
         )
-        # Empirical finding: overall_fraud_score is NaN
-        is_nan = math.isnan(result.overall_fraud_score)
+        # Empirical finding: anomaly_density_score is NaN
+        is_nan = math.isnan(result.anomaly_density_score)
         # Document the vulnerability:
         if is_nan:
             # Bug reproduced empirically: score is NaN, not in [0.0, 100.0]
             assert is_nan is True
-            assert result.risk_tier == "CRITICAL"  # Defaults to CRITICAL due to NaN comparisons
+            assert result.review_status == "FLAGGED FOR REVIEW"  # Defaults to CRITICAL due to NaN comparisons
         else:
-            assert 0.0 <= result.overall_fraud_score <= 100.0
+            assert 0.0 <= result.anomaly_density_score <= 100.0

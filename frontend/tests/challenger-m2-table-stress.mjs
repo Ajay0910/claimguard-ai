@@ -334,7 +334,7 @@ export function runClaimsTableStressTests() {
 
   const statuses = ['APPROVED', 'FLAGGED', 'REVIEW_RECOMMENDED', 'MISMATCH_DETECTED', 'PARTIAL_SETTLEMENT', 'PASS', 'FAIL'];
   const hospitals = ['Apollo Hospital, Chennai', 'Fortis Healthcare, Mumbai', 'Max Super Speciality, Delhi', 'Manipal Hospital, Bangalore', 'AIIMS New Delhi'];
-  const deductions = ['Proportionate deduction on Room Rent', 'Consumables & Non-medical charges', 'Investigation charges disallowed', 'Statutory Clause 45 violation', 'None'];
+  const deductions = ['Proportionate deduction on Room Rent', 'Consumables & Non-medical charges', 'Investigation charges disallowed', 'Statutory Clause 45 conflict', 'None'];
 
   const largeDataset = Array.from({ length: 1500 }, (_, i) => ({
     id: `CLM-${100000 + i}`,

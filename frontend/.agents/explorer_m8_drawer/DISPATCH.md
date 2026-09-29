@@ -17,7 +17,7 @@ Scope: Milestone 8 (Contextual Claim Inspection Drawer & Table Integration)
 Formulate exact implementation diffs and file specifications for:
 1. Create `src/components/dashboard/ClaimInspectionDrawer.jsx`:
    - Slide-over drawer with Framer Motion (`x: '100%' -> 0`) and backdrop overlay blur.
-   - In-context claim triage: Header (Claim ID, hospital, patient, status badge, close button), Monetary Reconciliation (claimed, approved, deducted, recoverable with delta bar), Forensics score gauge, Flagged statutory violations with citation copy, Attached document manifest, and Quick Actions ("Open Full Dossier" button navigating to `/analysis/:id`, "Copy ID", "Download Appeal").
+   - In-context claim triage: Header (Claim ID, hospital, patient, status badge, close button), Monetary Reconciliation (claimed, approved, deducted, recoverable with delta bar), Forensics score gauge, Flagged statutory conflicts with citation copy, Attached document manifest, and Quick Actions ("Open Full Dossier" button navigating to `/analysis/:id`, "Copy ID", "Download Appeal").
    - Query param synchronization: `?inspect=CLM-XXXXX` using `useSearchParams` so deep links directly open the drawer on dashboard, and closing the drawer cleanly removes the param without page reload.
    - Responsive: `w-full` on mobile, `sm:w-[540px] lg:w-[620px]` on desktop.
 2. In `src/components/dashboard/ClaimsTable.jsx`:

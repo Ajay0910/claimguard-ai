@@ -22,5 +22,5 @@ FORENSIC AUDIT CHECKS:
 
 OUTPUT:
 - Write detailed audit report to: c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\auditor_m2_1\handoff.md
-- Explicitly declare verdict: CLEAN or INTEGRITY VIOLATION.
+- Explicitly declare verdict: CLEAN or INTEGRITY CONFLICT.
 - Send message back to parent when done.

@@ -37,7 +37,7 @@ export const formatCompactInr = (amount) => {
 export const defaultDashboardAnalytics = {
   statusBreakdown: [
     { id: 'APPROVED', label: 'Approved (Clean)', count: 72, color: '#059669', hoverColor: '#10B981', ringClass: 'text-emerald-600', bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { id: 'FLAGGED', label: 'Flagged / Violations', count: 42, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
+    { id: 'FLAGGED', label: 'Flagged / Conflicts', count: 42, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
     { id: 'REVIEW', label: 'Under Review', count: 14, color: '#D97706', hoverColor: '#FBBF24', ringClass: 'text-amber-600', bgClass: 'bg-amber-50 text-amber-700 border-amber-200' },
     { id: 'DISALLOWED', label: 'Disallowed / Deductions', count: 2, color: '#64748B', hoverColor: '#94A3B8', ringClass: 'text-slate-600', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
   ],
@@ -48,7 +48,7 @@ export const defaultDashboardAnalytics = {
     { id: 'recoverable', name: 'Contested & Recoverable', amount: 645000, base: 1620000, delta: 645000, type: 'recovery', color: '#059669', description: 'Identified wrongful deductions backed by Insurance Act Sec 45 (+₹6.45L)' },
     { id: 'net', name: 'Audited Net Settlement', amount: 2265000, base: 0, delta: 2265000, type: 'final', color: '#0D9488', description: 'Projected net rightful payout after grievance appeal (91.3%)' },
   ],
-  ruleViolations: [
+  ruleConflicts: [
     {
       id: 'PROP-DED',
       name: 'Proportionate Deduction Scaling',
@@ -141,7 +141,7 @@ export function StatusDonutChart({
 
     return [
       { id: 'APPROVED', label: 'Approved (Clean)', count: approved, color: '#059669', hoverColor: '#10B981', ringClass: 'text-emerald-600', bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-      { id: 'FLAGGED', label: 'Flagged / Violations', count: flagged, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
+      { id: 'FLAGGED', label: 'Flagged / Conflicts', count: flagged, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
       { id: 'REVIEW', label: 'Under Review', count: review, color: '#D97706', hoverColor: '#FBBF24', ringClass: 'text-amber-600', bgClass: 'bg-amber-50 text-amber-700 border-amber-200' },
       { id: 'DISALLOWED', label: 'Disallowed / Deductions', count: disallowed, color: '#64748B', hoverColor: '#94A3B8', ringClass: 'text-slate-600', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
     ];
@@ -458,10 +458,10 @@ export function FinancialWaterfallChart({
 }
 
 /**
- * 3. Rule Violation Frequency Bar Chart
+ * 3. Rule Conflict Frequency Bar Chart
  */
-export function RuleViolationBarChart({
-  rules = defaultDashboardAnalytics.ruleViolations,
+export function RuleConflictBarChart({
+  rules = defaultDashboardAnalytics.ruleConflicts,
   className = '',
 }) {
   const [sortBy, setSortBy] = useState('count'); // 'count' | 'impact'
@@ -495,7 +495,7 @@ export function RuleViolationBarChart({
         <div>
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-brand-600" />
-            Top Statutory Rule Violations & Monetary Leverage
+            Top Statutory Rule Conflicts & Monetary Leverage
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
             Frequently cited IRDAI circulars and wrongful disallowance grounds across audited claims
@@ -560,7 +560,7 @@ export function RuleViolationBarChart({
 
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-slate-900 font-financial">
-                    {rule.count} violations
+                    {rule.count} conflicts
                   </span>
                   <span className="text-xs font-bold text-rose-600 font-financial bg-rose-50 px-2 py-0.5 rounded border border-rose-100">
                     {formatInr(rule.monetaryImpact)}
@@ -649,8 +649,8 @@ export default function DashboardCharts({
         </div>
       </div>
 
-      {/* Full-width Row: Rule Violations Bar Chart */}
-      <RuleViolationBarChart rules={data.ruleViolations} />
+      {/* Full-width Row: Rule Conflicts Bar Chart */}
+      <RuleConflictBarChart rules={data.ruleConflicts} />
     </div>
   );
 }

@@ -14,7 +14,7 @@ Perform code architecture, contracts, edge cases, state flow review, and adversa
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
 - Report any failures as findings — do NOT fix them yourself
-- Evidence-based, adversarial criticism, integrity violation checks
+- Evidence-based, adversarial criticism, integrity conflict checks
 - Check for hardcoded test results, facade logic, bypassed work
 
 ## Current Parent
@@ -52,7 +52,7 @@ Perform code architecture, contracts, edge cases, state flow review, and adversa
 - **Untested angles**: Large-scale (>10,000 claims) client-side virtualization
 
 ## Key Decisions Made
-- Confirmed zero integrity violations: no hardcoded test facades, genuine SVG rendering, valid test execution.
+- Confirmed zero integrity conflicts: no hardcoded test facades, genuine SVG rendering, valid test execution.
 - Executed `npm run build` (0 errors), `npm test` (67/67 passed), and `node tests/run-stress-tests.mjs` (33/33 passed).
 - Formulating final 5-component handoff report.
 

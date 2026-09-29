@@ -18,7 +18,7 @@ Current Phase: Phase 4 - Handoff & Reporting
   - src/components/VerdictCard.jsx (re-export shim)
   - tests/check-imports.mjs and SSR stress test runners
 - [x] Executed Phase 1 Mode-Agnostic Forensic Checks (0 hardcoded outputs, 0 facades, 0 pre-populated logs, 0 illicit delegations)
-- [x] Executed Phase 2 Mode-Specific Verification under Benchmark Mode (0 violations)
+- [x] Executed Phase 2 Mode-Specific Verification under Benchmark Mode (0 conflicts)
 - [x] Executed Phase 3 Adversarial Analysis (stress tested edge cases and hostile inputs)
 - [x] Verified Layout Compliance (.agents contains only markdown metadata)
 - [x] Documented findings in handoff.md

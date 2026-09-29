@@ -10,7 +10,7 @@
 
 ## 1. Observation
 
-### 1.1 Integrity Violation Audit
+### 1.1 Integrity Conflict Audit
 - **Source Code Verification**: Inspected `src/pages/Dashboard.jsx`, `src/components/dashboard/DashboardCharts.jsx`, `src/components/dashboard/ClaimsTable.jsx`, `src/components/dashboard/ExecutiveKpiCards.jsx`, and `src/services/api.js`.
   - No hardcoded test outputs or dummy facades detected.
   - Interactive SVG annular geometry (`stroke-dasharray`, `stroke-dashoffset`), dynamic state management, filtering, sorting, pagination, and multi-document presence pill derivation are genuine and fully implemented.
@@ -134,7 +134,7 @@
 
 Milestone 2 fulfills all functional, architectural, and visual requirements specified in `ORIGINAL_REQUEST.md` and `PROJECT.md`.
 - **Feature 6 (Executive KPI Cards)**: Delivered with pure SVG spline curve sparklines, variance indicators, target pills, and Indian Rupee formatting.
-- **Feature 7 (Dashboard Visualizations)**: Pure React + SVG Status Donut Chart with smooth cross-filtering, Accounting Waterfall Chart, and Statutory Rule Violations Bar Chart with citation clipboard copy.
+- **Feature 7 (Dashboard Visualizations)**: Pure React + SVG Status Donut Chart with smooth cross-filtering, Accounting Waterfall Chart, and Statutory Rule Conflicts Bar Chart with citation clipboard copy.
 - **Feature 8 (Claims Data Table)**: Multi-field search, URL parameter synchronization (`?q=`), status filter tabs with dynamic counts, tripartite document presence pills (`BILL`/`POL`/`REJ`), sortable columns, and paginated ledger.
 - **Verification Integrity**: Passed with 0 errors across Vite production build (`npm run build`), SSR component stress tests (`33/33 Passed`), and full E2E test runner (`67/67 Passed`).
 

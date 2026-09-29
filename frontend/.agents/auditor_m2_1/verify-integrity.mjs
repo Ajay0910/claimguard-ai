@@ -176,7 +176,7 @@ function matchesStatusTab(claim, tabKey) {
     case 'PENDING':
       return ['REVIEW_RECOMMENDED', 'NEEDS_REVIEW', 'WARNING', 'PENDING', 'ANALYZING', 'RUNNING', 'EXTRACTING', 'PROCESSING'].includes(status);
     case 'DISALLOWED':
-      return impact > 0 || deduction.includes('deduction') || deduction.includes('violation') || status === 'PARTIAL_SETTLEMENT';
+      return impact > 0 || deduction.includes('deduction') || deduction.includes('conflict') || status === 'PARTIAL_SETTLEMENT';
     default:
       return true;
   }
@@ -330,7 +330,7 @@ if (fs.existsSync(distAssetsDir)) {
 
 console.log(`\n=============================================================`);
 console.log(`AUDIT RESULTS: ${passCount} Passed, ${failCount} Failed`);
-console.log(`VERDICT: ${failCount === 0 ? 'CLEAN' : 'INTEGRITY VIOLATION'}`);
+console.log(`VERDICT: ${failCount === 0 ? 'CLEAN' : 'INTEGRITY CONFLICT'}`);
 console.log(`=============================================================`);
 
 if (failCount > 0) process.exit(1);

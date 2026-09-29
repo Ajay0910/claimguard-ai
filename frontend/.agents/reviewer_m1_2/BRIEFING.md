@@ -14,7 +14,7 @@ Review Milestone 1 code changes for Foundations & Layout Shell (Topbar, breadcru
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
 - Run independent verification (`npm run build` and `npm test`)
-- Actively check for integrity violations (hardcoding, dummies, bypassed logic, fabricated outputs)
+- Actively check for integrity conflicts (hardcoding, dummies, bypassed logic, fabricated outputs)
 - Issue clear verdict: APPROVE or REQUEST_CHANGES
 - Follow 5-component handoff protocol (Observation, Logic Chain, Caveats, Conclusion, Verification Method)
 
@@ -58,7 +58,7 @@ Review Milestone 1 code changes for Foundations & Layout Shell (Topbar, breadcru
   - Live backend WebSocket/SSE streaming (backend integration scheduled for later milestones).
 
 ## Key Decisions Made
-- Confirmed zero integrity violations in source code.
+- Confirmed zero integrity conflicts in source code.
 - Confirmed backward compatibility across all existing pages.
 - Issued APPROVE verdict for Milestone 1.
 

@@ -1,0 +1,56 @@
+[
+    {
+        "case_id": "case_001_baseline_correct",
+        "category": "correct_rejections",
+        "PASS": true,
+        "Input Documents": {
+            "hospital_bill": [
+                "HOSPITAL BILL",
+                "Patient: John Doe",
+                "Diagnosis: Malaria",
+                "Room: 5000",
+                "Total: 50000"
+            ],
+            "insurance_policy": [
+                "INSURANCE POLICY",
+                "Policyholder: John Doe",
+                "Room Rent Limit: 6000",
+                "Moratorium: 12 months (Passed)"
+            ],
+            "rejection_letter": [
+                "REJECTION LETTER",
+                "Insurer: HealthGuard",
+                "Patient: John Doe",
+                "Total Claimed: 50000",
+                "Total Approved: 50000",
+                "Deductions: 0"
+            ]
+        },
+        "Expected Result": true,
+        "Actual Result": true,
+        "Financial Difference": -45000.0,
+        "Rule IDs": [
+            "Policy Applicability Gate",
+            "Proportionate Deduction Rule",
+            "Clause Timeline Rule",
+            "Mental Health Parity Rule",
+            "Waiting Period Rule",
+            "Authenticity Verification Check",
+            "Deductible Rule",
+            "Cross-Document Adjudication",
+            "Co-Pay Rule",
+            "Final Financial Reconciliation Gate"
+        ],
+        "Policy Clauses": [
+            "Standard coverage terms"
+        ],
+        "Regulatory Sources": [
+            "IRDAI Master Circular (KYC & Provider Registration)"
+        ],
+        "Evidence Provenance": [
+            "Derived from Hospital Bill (Total Amount), Rejection Letter (Approved Amount, Deductions), and Insurance Policy."
+        ],
+        "Confidence": 0.85,
+        "Human Review Required": false
+    }
+]

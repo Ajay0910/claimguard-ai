@@ -36,7 +36,7 @@ Independently re-verify Milestone 2 following targeted remediation by worker_m2_
 ## Review Checklist
 - **Items reviewed**:
   - `ClaimsTable.jsx`: safe claims null guard (lines 208-219), search string coercion (lines 281-298), multi-column sorting safe comparators (lines 310-365), CSV RFC 4180 / DDE formula sanitization (lines 431-461), `formatINR` fallback on empty strings/arrays (lines 33-43).
-  - `DashboardCharts.jsx`: `FinancialWaterfallChart` safe denominator `maxVal` guard against 0 (lines 334-335, 373-375), `StatusDonutChart` active non-zero slice count gap prevention on 100% single slice (lines 160-165), `RuleViolationBarChart` safe percentage clamp and denominator guard (lines 474-475, 526-528), `handleSliceClick` function type check (lines 183-187), `formatCompactInr` negative amount formatting (lines 26-34).
+  - `DashboardCharts.jsx`: `FinancialWaterfallChart` safe denominator `maxVal` guard against 0 (lines 334-335, 373-375), `StatusDonutChart` active non-zero slice count gap prevention on 100% single slice (lines 160-165), `RuleConflictBarChart` safe percentage clamp and denominator guard (lines 474-475, 526-528), `handleSliceClick` function type check (lines 183-187), `formatCompactInr` negative amount formatting (lines 26-34).
   - `MetricCard.jsx`: `SparklineCurve` non-finite number filtering and length < 2 safety (lines 17-21), unique gradient IDs via `useId` (lines 14-15, 67-71), activity bar finite number filtering and clamp (lines 236-247).
 - **Verdict**: APPROVE
 - **Unverified claims**: None; all 7 defects from challenger_m2_1 and challenger_m2_2 confirmed genuinely resolved.
@@ -55,7 +55,7 @@ Independently re-verify Milestone 2 following targeted remediation by worker_m2_
 
 ## Key Decisions Made
 - Confirmed that all 7 challenger defects were remediated with real, active algorithmic defenses.
-- Verified 0 integrity violations (no dummy facades, no test stubs, no hardcoded bypasses).
+- Verified 0 integrity conflicts (no dummy facades, no test stubs, no hardcoded bypasses).
 - Final Milestone 2 re-verification verdict: APPROVE.
 
 ## Artifact Index

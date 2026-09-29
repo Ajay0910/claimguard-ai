@@ -1,6 +1,6 @@
 # forensics module init
 from .engine import ForensicsEngine
-from .fraud_scorer import ExplainableFraudScorer, CompositeFraudScore, FactorAttribution
+from .fraud_scorer import AnomalyScorer, AnomalyAssessment, FactorAttribution
 from .pdf_inspector import PDFInspector, PDFInspectionResult, PDFRevisionInfo
 from .ela_detector import ELADetector
 from .metadata_checker import MetadataChecker
@@ -9,8 +9,8 @@ from .consistency_checker import ConsistencyChecker
 
 __all__ = [
     "ForensicsEngine",
-    "ExplainableFraudScorer",
-    "CompositeFraudScore",
+    "AnomalyScorer",
+    "AnomalyAssessment",
     "FactorAttribution",
     "PDFInspector",
     "PDFInspectionResult",

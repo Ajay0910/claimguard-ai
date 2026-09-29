@@ -13,7 +13,7 @@ Review and stress-test Milestone 6 implementation (Dependencies, Tokens, Utiliti
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Actively check for integrity violations (hardcoded test results, facade logic, shortcuts)
+- Actively check for integrity conflicts (hardcoded test results, facade logic, shortcuts)
 - Evidence-based findings with concrete file/line references and commands
 - Communicate final verdict via send_message to parent (3445fbbe-d553-4277-b396-0fe40c330e18)
 

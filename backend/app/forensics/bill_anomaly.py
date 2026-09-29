@@ -1,5 +1,6 @@
 from ..schemas.hospital_bill import HospitalBill
 from ..schemas.forensics_result import BillAnomalyFlag
+from ..rules import get_val
 
 # CGHS benchmark rates (2024)
 CGHS_BENCHMARKS = {
@@ -40,10 +41,12 @@ class BillAnomalyDetector:
     
     def _check_los_padding(self, bill: HospitalBill) -> list[BillAnomalyFlag]:
         flags = []
-        if not bill.diagnosis or not getattr(bill, 'length_of_stay', None):
+        diag = get_val(bill, 'diagnosis')
+        los = get_val(bill, 'length_of_stay')
+        if not diag or not los:
             return flags
             
-        diag_lower = bill.diagnosis.lower()
+        diag_lower = diag.lower()
         matched_diag = None
         for key in TYPICAL_LOS:
             if key in diag_lower:
@@ -52,17 +55,17 @@ class BillAnomalyDetector:
                 
         if matched_diag:
             typical_max = TYPICAL_LOS[matched_diag]['max']
-            if bill.length_of_stay > typical_max * 1.5:
+            if los > typical_max * 1.5:
                 flags.append(BillAnomalyFlag(
                     anomaly_type="LOS_PADDING",
-                    description=f"Length of stay ({bill.length_of_stay} days) is significantly higher than typical max ({typical_max} days) for {matched_diag}",
+                    description=f"Length of stay ({los} days) is significantly higher than typical max ({typical_max} days) for {matched_diag}",
                     severity="HIGH",
                     affected_items=[]
                 ))
-            elif bill.length_of_stay > typical_max:
+            elif los > typical_max:
                 flags.append(BillAnomalyFlag(
                     anomaly_type="LOS_PADDING",
-                    description=f"Length of stay ({bill.length_of_stay} days) is higher than typical max ({typical_max} days) for {matched_diag}",
+                    description=f"Length of stay ({los} days) is higher than typical max ({typical_max} days) for {matched_diag}",
                     severity="MEDIUM",
                     affected_items=[]
                 ))
@@ -70,46 +73,51 @@ class BillAnomalyDetector:
     
     def _check_tariff_deviation(self, bill: HospitalBill) -> list[BillAnomalyFlag]:
         flags = []
-        if not bill.line_items:
+        line_items = get_val(bill, 'line_items')
+        if not line_items:
             return flags
             
-        for item in bill.line_items:
-            cat = item.category.upper() if item.category else ''
+        for item in line_items:
+            cat_val = get_val(item, 'category')
+            cat = cat_val.upper() if cat_val else ''
             if cat in CGHS_BENCHMARKS:
                 bench_max = CGHS_BENCHMARKS[cat]['max']
-                item_amount = getattr(item, 'amount', getattr(item, 'total', 0.0))
+                item_amount = get_val(item, 'amount', get_val(item, 'total', 0.0))
+                item_desc = get_val(item, 'description', '')
                 if item_amount > bench_max * 3:
                     flags.append(BillAnomalyFlag(
                         anomaly_type="TARIFF_DEVIATION",
-                        description=f"Item '{item.description}' amount (₹{item_amount:.2f}) is >3x CGHS benchmark max (₹{bench_max:.2f})",
+                        description=f"Item '{item_desc}' amount (₹{item_amount:.2f}) is >3x CGHS benchmark max (₹{bench_max:.2f})",
                         severity="HIGH",
-                        affected_items=[item.description]
+                        affected_items=[item_desc]
                     ))
                 elif item_amount > bench_max * 2:
                     flags.append(BillAnomalyFlag(
                         anomaly_type="TARIFF_DEVIATION",
-                        description=f"Item '{item.description}' amount (₹{item_amount:.2f}) is >2x CGHS benchmark max (₹{bench_max:.2f})",
+                        description=f"Item '{item_desc}' amount (₹{item_amount:.2f}) is >2x CGHS benchmark max (₹{bench_max:.2f})",
                         severity="MEDIUM",
-                        affected_items=[item.description]
+                        affected_items=[item_desc]
                     ))
         return flags
     
     def _check_duplicate_billing(self, bill: HospitalBill) -> list[BillAnomalyFlag]:
         flags = []
-        if not bill.line_items:
+        line_items = get_val(bill, 'line_items')
+        if not line_items:
             return flags
             
-        los = getattr(bill, 'length_of_stay', 1)
+        los = get_val(bill, 'length_of_stay', 1)
         if not los or los < 1:
             los = 1
             
         desc_counts = {}
-        for item in bill.line_items:
-            desc = item.description.lower().strip()
+        for item in line_items:
+            desc = get_val(item, 'description', '').lower().strip()
+            qty = get_val(item, 'quantity', 1)
             if desc in desc_counts:
-                desc_counts[desc] += item.quantity
+                desc_counts[desc] += qty
             else:
-                desc_counts[desc] = item.quantity
+                desc_counts[desc] = qty
                 
         for desc, total_qty in desc_counts.items():
             if total_qty > (los * 5) and total_qty > 10:  # Adjust threshold based on LOS
@@ -123,14 +131,17 @@ class BillAnomalyDetector:
     
     def _check_itemization(self, bill: HospitalBill) -> list[BillAnomalyFlag]:
         flags = []
-        if not bill.line_items or not getattr(bill, 'net_payable', None) or bill.net_payable <= 0:
+        line_items = get_val(bill, 'line_items')
+        net_payable = get_val(bill, 'net_payable')
+        
+        if not line_items or not net_payable or net_payable <= 0:
             return flags
             
-        calculated_total = sum(getattr(item, 'amount', getattr(item, 'total', 0.0)) for item in bill.line_items)
-        if abs(calculated_total - bill.net_payable) > 10.0:  # 10 INR tolerance
+        calculated_total = sum(get_val(item, 'amount', get_val(item, 'total', 0.0)) for item in line_items)
+        if abs(calculated_total - net_payable) > 10.0:  # 10 INR tolerance
             flags.append(BillAnomalyFlag(
                 anomaly_type="ITEMIZATION_MISMATCH",
-                description=f"Sum of line items (₹{calculated_total:.2f}) does not match billed net payable (₹{bill.net_payable:.2f})",
+                description=f"Sum of line items (₹{calculated_total:.2f}) does not match billed net payable (₹{net_payable:.2f})",
                 severity="HIGH",
                 affected_items=[]
             ))

@@ -710,7 +710,7 @@ export const mockClaims = [
     updated_at: '2026-09-15T11:45:00Z',
     date: '15/09/2026',
     hospital: 'Apollo Hospitals, Bangalore',
-    deduction_type: 'Proportionate Deduction Violation',
+    deduction_type: 'Proportionate Deduction Conflict',
     documents_status: { bill: true, policy: true, rejection: true },
   },
   {
@@ -858,7 +858,7 @@ export const mockAnalysisResult = {
   confidence_score: 0.96,
   total_insurer_calculation: 68000,
   total_correct_calculation: 110500,
-  summary: 'Insurer wrongfully applied proportionate deductions across fixed medical procedures (OT, Consultation, Pharmacy) in violation of IRDAI Master Circular May 2024. Total recoverable underpayment is ₹42,500.00.',
+  summary: 'Insurer wrongfully applied proportionate deductions across fixed medical procedures (OT, Consultation, Pharmacy) in conflict of IRDAI Master Circular May 2024. Total recoverable underpayment is ₹42,500.00.',
   rule_verdicts: [
     {
       rule_name: 'Proportionate Deduction Audit (IRDAI May 2024)',
@@ -960,10 +960,10 @@ We write on behalf of the policyholder, Mr. Ayush Sharma, regarding the partial 
 
 Following automated forensic and statutory audit, we highlight the following non-compliant deductions:
 
-1. VIOLATION OF IRDAI MASTER CIRCULAR ON PROPORTIONATE DEDUCTION:
+1. CONFLICT OF IRDAI MASTER CIRCULAR ON PROPORTIONATE DEDUCTION:
 Under IRDAI Master Circular on Operations and Allied Matters May 2024 (Ref: IRDAI/HLT/REG/CIR/084/05/2024, Clause 12.3), proportionate deduction on room category variation may ONLY be applied to associated room rent and nursing expenses. The insurer has unlawfully applied a 40% deduction to Operation Theatre charges (₹35,000) and Specialist Consultation fees (₹15,000), withholding ₹32,000.00 contrary to explicit statutory mandate.
 
-2. VIOLATION OF SECTION 45 MORATORIUM PERIOD IMMUNITY:
+2. CONFLICT OF SECTION 45 MORATORIUM PERIOD IMMUNITY:
 The policy has been continuously active for 64 months since inception. Under Section 45 of the Insurance Act 1938 and Regulation 15 of IRDAI Health Insurance Regulations, no claim can be repudiated or contested for pre-existing non-disclosure after continuous 60 months of coverage. The deduction of ₹10,500.00 on this ground is void ab initio.
 
 DEMAND FOR REIMBURSEMENT:

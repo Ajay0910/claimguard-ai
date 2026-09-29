@@ -13,7 +13,7 @@ Comprehensive final review and adversarial stress-testing of ClaimGuard AI React
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Actively check for integrity violations: hardcoded test results, facade implementations, shortcuts, fabricated verification, self-certifying work. If found, verdict must be REQUEST_CHANGES tagged as INTEGRITY VIOLATION.
+- Actively check for integrity conflicts: hardcoded test results, facade implementations, shortcuts, fabricated verification, self-certifying work. If found, verdict must be REQUEST_CHANGES tagged as INTEGRITY CONFLICT.
 - Provide objective, evidence-based review with clear verification.
 - Write handoff report with 5 components to handoff.md.
 

@@ -5,7 +5,7 @@
 **Date:** 2026-09-17T18:52:00Z  
 **Milestone:** Milestone 2 (M2) — Enterprise Dashboard & Visualizations  
 **Final Verdict:** **`APPROVE`**  
-**Integrity Audit Finding:** **`CLEAN`** (0 Integrity Violations, 0 Facades, 0 Hardcoded Stubs)
+**Integrity Audit Finding:** **`CLEAN`** (0 Integrity Conflicts, 0 Facades, 0 Hardcoded Stubs)
 
 ---
 
@@ -18,7 +18,7 @@
 | **SVG Math & Charts Stress Suite** (`tests/challenger-m2-charts-stress.mjs`) | 100% Pass, 0 NaNs | 18 / 18 Passed (0 NaNs) | **PASS** |
 | **Master Automated Test Suite** (`npm test`) | 100% Pass across Tiers 1-4 | 72 / 72 Passed (100%) | **PASS** |
 | **Vite Production Build** (`npm run build`) | 0 Errors | 0 Errors (42.05 kB CSS, 436.64 kB JS) | **PASS** |
-| **Adversarial Integrity Audit** | 0 Bypasses / 0 Stubs / 0 Hardcoding | 0 Violations (Clean dynamic code) | **PASS** |
+| **Adversarial Integrity Audit** | 0 Bypasses / 0 Stubs / 0 Hardcoding | 0 Conflicts (Clean dynamic code) | **PASS** |
 
 ---
 
@@ -130,7 +130,7 @@ Direct line-by-line inspection and independent validation of the source code fil
      const dashLength = Math.max(0, fraction * circumference - gapPadding);
    ```
    - *Observation*: When all claims belong to one status, `activeCategoriesCount` is `1`. `gapPadding` evaluates to `0`. `dashLength` equals the full circumference (`427.26`), rendering a 360° closed ring without a notch.
-3. **RuleViolationBarChart Safe Denominator & Clamping (Lines 474–475, 526–528)**:
+3. **RuleConflictBarChart Safe Denominator & Clamping (Lines 474–475, 526–528)**:
    ```javascript
    const rawMax = Math.max(0, ...rules.map((r) => (sortBy === 'impact' ? r.monetaryImpact : r.count)));
    const maxVal = rawMax <= 0 || isNaN(rawMax) ? 1 : rawMax;

@@ -14,7 +14,7 @@ def generate_rejections():
 
     random.seed(999)
     for i in range(30):
-        patient = PATIENTS[i]
+        patient = "Rajesh Gupta"
         insurer = random.choice(INSURERS)
         policy_no = f"POL-{1000+i}"
         claim_no = f"CLM-{5000+i}"
@@ -78,7 +78,7 @@ def generate_rejections():
         
         pdf.cell(0, 6, "For Grievance Redressal, please contact gro@insurer.com or IRDAI Bima Bharosa.", ln=True)
 
-        filename = f"rejection_{patient}.pdf"
+        filename = f"rejection_{i:03d}_{cat.replace(' ', '_')}.pdf"
         filepath = os.path.join(out_dir, filename)
         pdf.output(filepath)
 

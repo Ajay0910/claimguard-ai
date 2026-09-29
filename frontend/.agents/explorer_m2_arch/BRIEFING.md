@@ -24,7 +24,7 @@ Investigate codebase and create the comprehensive architectural blueprint for Mi
 - **Key findings**:
   - Current `Dashboard.jsx` lacked visualizations, skeletons, proper error recovery, URL search sync, and advanced table features.
   - No external charting library needed: custom pure SVG and CSS interactive widgets provide optimal performance and exact theme alignment.
-  - Modular breakdown: `DashboardCharts.jsx` (Status Donut, Recovery Waterfall, Rule Violation Frequency) and `ClaimsTable.jsx` (Search, Tabs, Multi-Doc Trio, Sort, Pagination, Export).
+  - Modular breakdown: `DashboardCharts.jsx` (Status Donut, Recovery Waterfall, Rule Conflict Frequency) and `ClaimsTable.jsx` (Search, Tabs, Multi-Doc Trio, Sort, Pagination, Export).
   - All contracts and backward-compatibility aliases verified against `types/index.ts` and `api.js`.
 - **Unexplored areas**: Milestone 3 (Upload Studio) and Milestone 4 (Analysis Hub).
 

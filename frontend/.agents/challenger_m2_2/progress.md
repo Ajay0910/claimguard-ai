@@ -13,7 +13,7 @@
 - Empirically discovered and verified:
   1. FinancialWaterfallChart divide-by-zero (`height: NaNpx; marginBottom: NaNpx;`) when stats.total_recovered_amount = 0.
   2. StatusDonutChart 100% single category 2.5px gap artifact due to checking schema length rather than active non-zero slices.
-  3. RuleViolationBarChart divide-by-zero (`width: NaN%`) when all rules have 0 count and 0 impact.
+  3. RuleConflictBarChart divide-by-zero (`width: NaN%`) when all rules have 0 count and 0 impact.
   4. formatCompactInr negative value formatting omission (`₹-50000`).
   5. SparklineCurve lack of per-element array sanitization propagating `NaN` into SVG spline path.
   6. Cross-filtering callback missing `typeof === 'function'` check.

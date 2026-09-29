@@ -77,7 +77,7 @@
        * Block #01: `DOCUMENT_INGESTION` (Auditor ingestion, raw file SHA-256)
        * Block #02: `VLM_EXTRACTION_COMPLETED` (OCR & NER itemization)
        * Block #03: `FORENSICS_AND_ELA_VERIFIED` (ELA scan & CGHS benchmark)
-       * Block #04: `RULE_ENGINE_EVALUATION` (IRDAI statutory rules & violation detection)
+       * Block #04: `RULE_ENGINE_EVALUATION` (IRDAI statutory rules & conflict detection)
        * Block #05: `AUDIT_REPORT_SEALED` (Merkle/Ledger sealed final verdict)
   2. *Cryptographic Hash Chain*:
      - Every block explicitly displays its 64-character SHA-256 `entry_hash` and `previous_hash`, linked by a continuous vertical hash connector line with chained lock icons.
@@ -97,7 +97,7 @@
      - Formal Addressee: Grievance Redressal Officer (GRO), Insurer name and address.
      - Subject: Statutory grievance under IRDAI (Protection of Policyholders' Interests) Regulations, 2024.
   2. *Statutory Contentions & Monetary Table*:
-     - Grounds 1: Proportionate deduction violation under IRDAI Master Circular May 2024 (Clause 12.3).
+     - Grounds 1: Proportionate deduction conflict under IRDAI Master Circular May 2024 (Clause 12.3).
      - Grounds 2: Section 45 Insurance Act 1938 Moratorium Period protection (continuous 60+ months coverage).
      - Embedded monetary dispute breakdown table comparing Billed, Insurer Allowed, Legally Entitled, and Contested Underpayment.
      - 15-day restitution demand with statutory penal interest (Bank Rate + 2% p.a.).
@@ -1585,7 +1585,7 @@ export default function AppealLetter({
               <div className="p-3.5 bg-slate-50 rounded border border-slate-200 space-y-1.5">
                 <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-mono flex items-center justify-center">1</span>
-                  VIOLATION OF IRDAI MASTER CIRCULAR ON PROPORTIONATE DEDUCTION (Ref: IRDAI/HLT/REG/CIR/084/05/2024)
+                  CONFLICT OF IRDAI MASTER CIRCULAR ON PROPORTIONATE DEDUCTION (Ref: IRDAI/HLT/REG/CIR/084/05/2024)
                 </div>
                 <p className="text-xs text-slate-700 pl-6 leading-relaxed">
                   Under Clause 12.3 of the Master Circular on Operations and Allied Matters (May 2024), proportionate deductions on room category variation are restricted strictly to room-rent-linked charges. The insurer has unlawfully applied a 40% deduction to Operation Theatre charges (₹35,000) and Consultant fees (₹15,000), withholding <strong>₹32,000.00</strong> in direct contravention of binding IRDAI directives.

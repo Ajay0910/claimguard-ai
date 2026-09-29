@@ -73,7 +73,7 @@
    ▶ Tier 2.6: CGHS Tariff Benchmark Multiplier Boundaries (Tier 2) [3 passed]
    ▶ Tier 2.7: Hospital Bill Itemization Arithmetic Tolerance (₹10 Threshold) (Tier 2) [2 passed]
    ▶ Tier 3.1: Multi-Document Intake Matrix & State Transitions (Tier 3) [4 passed]
-   ▶ Tier 3.2: Concurrent Multi-Rule Violations & Financial Reconciliation (Tier 3) [1 passed]
+   ▶ Tier 3.2: Concurrent Multi-Rule Conflicts & Financial Reconciliation (Tier 3) [1 passed]
    ▶ Tier 3.3: Forensic Tampering Multi-Vector Combination (Tier 3) [1 passed]
    ▶ Tier 3.4: Clinical Consistency Matrix & Anomaly Detection (Tier 3) [1 passed]
    ▶ Tier 3.5: Cryptographic SHA-256 Audit Trail Chain Integrity (Tier 3) [2 passed]
@@ -147,7 +147,7 @@
 **Final Verdict: CLEAN**
 
 Milestone 1 work product fully meets all integrity and quality standards:
-- 0 integrity violations detected.
+- 0 integrity conflicts detected.
 - 0 facade implementations or hardcoded shortcuts.
 - 0 pre-populated verification artifacts.
 - 100% of the 14 Milestone 1 deliverables are implemented, backward-compatible, and functional.

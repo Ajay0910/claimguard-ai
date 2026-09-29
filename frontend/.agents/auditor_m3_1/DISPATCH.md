@@ -18,9 +18,9 @@ FORENSIC AUDIT CHECKS:
 2. Verify that `validateUploadFile` and `autoTagDocument` implement genuine algorithmic logic.
 3. Verify that the sample Apollo loader populates authentic structured document objects conforming to schemas.
 4. Verify that `npm run build` succeeds cleanly without compiler warnings or code suppressions.
-5. Check for any violation of user requirements R1, R2, R3.
+5. Check for any conflict of user requirements R1, R2, R3.
 
 OUTPUT:
 - Write report to: c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\auditor_m3_1\handoff.md
-- Declare verdict: CLEAN or INTEGRITY VIOLATION.
+- Declare verdict: CLEAN or INTEGRITY CONFLICT.
 - Send message back to parent when done.

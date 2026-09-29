@@ -13,7 +13,7 @@ Objectively and adversarially review Milestone 2: Enterprise Dashboard & Visuali
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Check for integrity violations (hardcoded test outputs, dummy implementations, shortcuts)
+- Check for integrity conflicts (hardcoded test outputs, dummy implementations, shortcuts)
 - Evidence-based findings with exact file paths and line numbers
 - Write handoff.md following 5-component report format
 - Explicit verdict: APPROVE or REQUEST_CHANGES
@@ -56,11 +56,11 @@ Objectively and adversarially review Milestone 2: Enterprise Dashboard & Visuali
   - SVG linearGradient ID collision across multiple cards -> Confirmed duplicate IDs generated.
   - Disallowance rate dynamism -> Found hardcoded static string.
   - Unused imports -> Found unused `FileSearch` in ClaimsTable.jsx.
-- **Vulnerabilities found**: 2 Major findings, 1 Medium finding, 4 Minor findings (none constituting integrity violations or build breakers).
+- **Vulnerabilities found**: 2 Major findings, 1 Medium finding, 4 Minor findings (none constituting integrity conflicts or build breakers).
 - **Untested angles**: Real-time WebSocket subscriptions (out of scope for M2).
 
 ## Key Decisions Made
-- Confirmed zero integrity violations: genuine SVG math, real table filtering/sorting, clean production build.
+- Confirmed zero integrity conflicts: genuine SVG math, real table filtering/sorting, clean production build.
 - Issued APPROVE verdict to allow pipeline progression to M3 (Upload Studio), logging refinement items for M5 hardening.
 
 ## Artifact Index

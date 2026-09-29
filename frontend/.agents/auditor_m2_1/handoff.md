@@ -56,7 +56,7 @@
      const barHeight = Math.max(14, (step.amount / maxVal) * chartHeight);
      const bottomOffset = ((step.base || 0) / maxVal) * chartHeight;
      ```
-   - Lines 460–465: `RuleViolationBarChart` implements interactive sorting (`sortBy === 'impact'` vs `'count'`), copyable IRDAI statutory citations (`handleCopyCitation`), and dynamic gradient progress bars.
+   - Lines 460–465: `RuleConflictBarChart` implements interactive sorting (`sortBy === 'impact'` vs `'count'`), copyable IRDAI statutory citations (`handleCopyCitation`), and dynamic gradient progress bars.
 
 3. **`src/components/dashboard/ClaimsTable.jsx` (Lines 1–965)**:
    - Lines 250–259: Computes live `tabCounts` across all claims using `matchesStatusTab`.
@@ -130,7 +130,7 @@
    ✓ built in 773ms
    Running component stress tests in SSR runtime...
      ✔ PASS: ExecutiveKpiCards renders 4 financial KPI cards with sparklines and variance pills
-     ✔ PASS: DashboardCharts renders StatusDonutChart, FinancialWaterfallChart, and RuleViolationBarChart
+     ✔ PASS: DashboardCharts renders StatusDonutChart, FinancialWaterfallChart, and RuleConflictBarChart
      ✔ PASS: ClaimsTable renders with search bar, status filter tabs, sortable headers, document pills, and pagination
    ======================================================
    Component Stress Test Results: 33 Passed, 0 Failed
@@ -193,7 +193,7 @@
 - **Observation**: Lines 319–490 of `tests/tier1-feature-coverage.test.mjs` re-declare helper functions (`matchesStatusTab`, `formatCompactInr`, `formatClaimDate`, `deriveDocStatus`) inside the test file rather than importing them directly from `src/components/dashboard/ClaimsTable.jsx` or `DashboardCharts.jsx`.
 - **Attack Scenario**: If a developer modifies `matchesStatusTab` in `ClaimsTable.jsx` without updating `tier1-feature-coverage.test.mjs`, the Tier 1 test could pass while the UI behaves differently.
 - **Blast Radius**: Low. The actual JSX components are independently tested in `tests/component-harness.jsx` via Vite SSR bundling, ensuring the true components render and function.
-- **Mitigation Recommendation**: In a future refactoring step, extract pure algorithmic helpers (`matchesStatusTab`, `formatClaimDate`, `deriveDocStatus`, `formatCompactInr`) into a non-JSX utility file (`src/utils/claims.js`) so that `tier1-feature-coverage.test.mjs` and `ClaimsTable.jsx` import the identical function reference. Under `development` integrity mode, this does not constitute an integrity violation.
+- **Mitigation Recommendation**: In a future refactoring step, extract pure algorithmic helpers (`matchesStatusTab`, `formatClaimDate`, `deriveDocStatus`, `formatCompactInr`) into a non-JSX utility file (`src/utils/claims.js`) so that `tier1-feature-coverage.test.mjs` and `ClaimsTable.jsx` import the identical function reference. Under `development` integrity mode, this does not constitute an integrity conflict.
 
 ### Challenge 2: In-Memory Client-Side Pagination
 - **Assumption Challenged**: Client-side array slicing handles enterprise data loads.
@@ -210,7 +210,7 @@ Milestone 2 deliverables (`Dashboard.jsx`, `DashboardCharts.jsx`, `ClaimsTable.j
 - All SVG charting mathematics (annular donut, recovery waterfall, cubic Bezier sparkline) are dynamically computed from input data.
 - Table filtering, sorting, pagination, and multi-field search operate via genuine algorithms without facade bypasses.
 - The production build compiles cleanly without suppressions or stubbing.
-- Zero integrity violations were detected.
+- Zero integrity conflicts were detected.
 
 **Official Audit Verdict**: **CLEAN**
 

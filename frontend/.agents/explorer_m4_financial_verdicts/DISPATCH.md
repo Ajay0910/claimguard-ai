@@ -20,7 +20,7 @@ SCOPE & RESPONSIBILITIES:
   * Visual delta bar (Insurer Approved vs Correct Allowable Amount).
   * IRDAI clause copy button with clipboard feedback.
   * Severity badges (FAIL / MISMATCH / PASS), confidence score, itemized rationale.
-  * Category filter tabs (All, Tier 1 Statutory, Tier 2 Policy, Violations Only).
+  * Category filter tabs (All, Tier 1 Statutory, Tier 2 Policy, Conflicts Only).
 - Design integration into `src/pages/Analysis.jsx` Tab 1.
 - Provide ready-to-implement JSX templates and prop contracts.
 

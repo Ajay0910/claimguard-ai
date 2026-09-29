@@ -330,7 +330,7 @@ Using `<AnimatePresence>` with separate `motion.div` (backdrop opacity `0 -> 1`)
 -        metaText="Discrepancy: ₹2.14L in dispute"
 -        sparkline={auditTrend}
 -        sparklineColor="rose"
--        tooltip="Claims with detected IRDAI clause violations, room rent caps, or pending forensic review."
+-        tooltip="Claims with detected IRDAI clause conflicts, room rent caps, or pending forensic review."
 -      />
 +      <motion.div variants={cardItemVariants}>
 +        <MetricCard
@@ -345,7 +345,7 @@ Using `<AnimatePresence>` with separate `motion.div` (backdrop opacity `0 -> 1`)
 +          metaText="Discrepancy: ₹2.14L in dispute"
 +          sparkline={auditTrend}
 +          sparklineColor="rose"
-+          tooltip="Claims with detected IRDAI clause violations, room rent caps, or pending forensic review."
++          tooltip="Claims with detected IRDAI clause conflicts, room rent caps, or pending forensic review."
 +        />
 +      </motion.div>
  

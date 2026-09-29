@@ -28,7 +28,7 @@ Remediate Milestone 2 edge-case stress test findings across ClaimsTable, Dashboa
 
 ## Key Decisions Made
 - `ClaimsTable.jsx`: coerced `claims: rawClaims = []` to `claims = Array.isArray(rawClaims) ? rawClaims : []`, wrapped all search and sort text fields in `String(...)`, sanitized currency strings with regex and NaN guard, handled invalid dates with fallback to 0, escaped CSV quotes and sanitized formula prefixes (`=`, `+`, `-`, `@`), and made `formatINR` return `—` for empty/whitespace strings and arrays.
-- `DashboardCharts.jsx`: guarded `maxVal` and `safeMaxVal` in `FinancialWaterfallChart` against `<= 0` to prevent `NaNpx` heights/margins, calculated `activeCategoriesCount` in `StatusDonutChart` to avoid gap on single 100% slices, guarded `maxVal` and clamped `percentage` in `RuleViolationBarChart` to prevent `NaN%`, guarded `onSelectStatusFilter` callback with `typeof === 'function'`, and handled negative numbers in `formatCompactInr`.
+- `DashboardCharts.jsx`: guarded `maxVal` and `safeMaxVal` in `FinancialWaterfallChart` against `<= 0` to prevent `NaNpx` heights/margins, calculated `activeCategoriesCount` in `StatusDonutChart` to avoid gap on single 100% slices, guarded `maxVal` and clamped `percentage` in `RuleConflictBarChart` to prevent `NaN%`, guarded `onSelectStatusFilter` callback with `typeof === 'function'`, and handled negative numbers in `formatCompactInr`.
 - `MetricCard.jsx`: sanitized `sparkline` using `cleanData` filtering for finite numbers, returning null if `< 2` points, generated unique gradient IDs via `useId()`, and sanitized activity bar heights against non-finite values.
 
 ## Artifact Index
@@ -40,7 +40,7 @@ Remediate Milestone 2 edge-case stress test findings across ClaimsTable, Dashboa
 ## Change Tracker
 - **Files modified**:
   * `src/components/dashboard/ClaimsTable.jsx`: safe claims defense, string coercive search/sort, currency/date sort sanitization, CSV formula injection defense, formatINR array/empty guards.
-  * `src/components/dashboard/DashboardCharts.jsx`: safeMaxVal waterfall guard, activeCategoriesCount donut gap fix, safeMax rule violation bar width guard, callback typeof guard, negative compact INR formatting.
+  * `src/components/dashboard/DashboardCharts.jsx`: safeMaxVal waterfall guard, activeCategoriesCount donut gap fix, safeMax rule conflict bar width guard, callback typeof guard, negative compact INR formatting.
   * `src/components/common/MetricCard.jsx`: sparkline NaN/null sanitization, unique SVG useId gradient IDs, activity bar clamping sanitization.
 - **Build status**: Code modifications complete and statically validated against all test harnesses.
 - **Pending issues**: None

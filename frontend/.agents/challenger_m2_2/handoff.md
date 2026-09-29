@@ -155,9 +155,9 @@
    - *Impact*: The code subtracts `2.5px` from the circumference, leaving an unintended `2.5px` notch at 12 o'clock in what should be a closed, continuous ring.
    - *Conclusion*: The gap subtraction must check the number of *active non-zero slices* (`const nonZeroCount = dynamicBreakdown.filter(i => i.count > 0).length; nonZeroCount > 1 ? 2.5 : 0`), rather than the schema length.
 
-3. **Zero Impact Divide-by-Zero in Rule Violation Bar Chart (MEDIUM Severity)**:
+3. **Zero Impact Divide-by-Zero in Rule Conflict Bar Chart (MEDIUM Severity)**:
    - *Observation*: Line 467 computes `maxVal` from rule counts/impacts.
-   - *Logic*: If all rule violations have `count: 0` and `monetaryImpact: 0`, `maxVal = 0`. Line 520 computes `(metricVal / maxVal) * 100`, which evaluates to `(0 / 0) * 100 = NaN`.
+   - *Logic*: If all rule conflicts have `count: 0` and `monetaryImpact: 0`, `maxVal = 0`. Line 520 computes `(metricVal / maxVal) * 100`, which evaluates to `(0 / 0) * 100 = NaN`.
    - *Impact*: Progress bar renders `style="width: NaN%"`.
    - *Conclusion*: Denominator must be guarded with `const safeMax = maxVal || 1`.
 
@@ -211,7 +211,7 @@ While the component library and visualizations are beautifully styled and featur
      const gapPadding = activeCategoriesCount > 1 && item.count > 0 ? 2.5 : 0;
      const dashLength = Math.max(0, fraction * circumference - gapPadding);
    ```
-3. **Fix RuleViolationBarChart divide-by-zero**:
+3. **Fix RuleConflictBarChart divide-by-zero**:
    ```javascript
    // Line 467 & 520: Replace with:
    const maxVal = Math.max(1, ...rules.map((r) => (sortBy === 'impact' ? r.monetaryImpact : r.count)));

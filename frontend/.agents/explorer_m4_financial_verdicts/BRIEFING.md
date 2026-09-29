@@ -37,7 +37,7 @@ Investigate and design the technical specification for Feature 12 (Financial Del
 
 ## Key Decisions Made
 - Reconciled Billed Amount vs Insurer Approved vs Disallowed vs Contested & Recoverable into an interactive stacked proportion bar with hover tooltips.
-- Implemented Tier 1 (Statutory) and Tier 2 (Policy) badge classification and filtering tabs (All, Tier 1, Tier 2, Violations Only).
+- Implemented Tier 1 (Statutory) and Tier 2 (Policy) badge classification and filtering tabs (All, Tier 1, Tier 2, Conflicts Only).
 - Designed 1-click clipboard citation copy with 2.5s feedback and toast integration.
 - Standardized currency formatting to `formatInr` and `formatCompactInr` using `Intl.NumberFormat('en-IN')`.
 

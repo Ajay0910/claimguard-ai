@@ -47,7 +47,7 @@ All 14 target files across the foundations, design system, data contracts, and a
      - `mockTenant`: St. Jude Multi-Specialty Hospital (NABH Accredited Tertiary Care).
      - `mockStats`: 128 claims, 14 pending, 42 mismatches, ₹14,28,500 recovered.
      - `mockClaims`: 8 realistic patient claims with various statuses (`COMPLETED`, `ANALYZING`, `PENDING`, `FAILED`) and deduction reasons.
-     - `mockAnalysisResult`: Detailed audit results for `CLM-84920` (₹42,500 impact, IRDAI proportionate deduction violation, moratorium clause Section 45, clean ELA forensics).
+     - `mockAnalysisResult`: Detailed audit results for `CLM-84920` (₹42,500 impact, IRDAI proportionate deduction conflict, moratorium clause Section 45, clean ELA forensics).
      - `mockAppealDraft`: Formal statutory grievance draft citing IRDAI May 2024 circular, Section 45, and Insurance Ombudsman rules.
      - `mockAuditTrail`: Chained SHA-256 tamper-evident log records.
 

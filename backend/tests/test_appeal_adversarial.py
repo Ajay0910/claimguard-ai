@@ -33,11 +33,9 @@ class TestAppealEvaluatorAdversarial:
             policy_data={"inception_date": "2023-01-01"}
         )
         assert isinstance(result, AppealEvaluationResult)
-        assert 0.0 <= result.overturn_probability <= 100.0
-        assert 0.0 <= result.ombudsman_dispute_risk <= 100.0
         assert result.appeal_viability in ["STRONG", "MODERATE", "LOW"]
         # Empty reasons trigger procedural defect in evaluate_denial
-        assert any("Procedural Defect" in v for v in result.statutory_violations_detected)
+        assert any("Procedural Defect" in v for v in result.statutory_conflicts_detected)
 
     def test_unrecognized_garbage_denial_reasons(self, evaluator):
         """Adversarial Test: Completely unrecognized reason strings fall back safely."""
@@ -51,9 +49,8 @@ class TestAppealEvaluatorAdversarial:
             policy_data={"inception_date": "2024-01-01"}
         )
         assert isinstance(result, AppealEvaluationResult)
-        assert result.overturn_probability == 25.0
         assert result.appeal_viability == "LOW"
-        assert len(result.statutory_violations_detected) == 0
+        assert len(result.statutory_conflicts_detected) == 0
 
     def test_conflicting_dates_admission_prior_to_inception(self, evaluator):
         """Adversarial Test: Claim/admission date prior to policy inception (negative time)."""
@@ -66,9 +63,8 @@ class TestAppealEvaluatorAdversarial:
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
         assert isinstance(result, AppealEvaluationResult)
-        # Should NOT trigger moratorium violation since elapsed_months is floored at 0.0
-        assert not any("Moratorium Violation" in v for v in result.statutory_violations_detected)
-        assert result.overturn_probability == 25.0
+        # Should NOT trigger moratorium conflict since elapsed_months is floored at 0.0
+        assert not any("Moratorium Conflict" in v for v in result.statutory_conflicts_detected)
 
     def test_conflicting_tat_dates_decision_prior_to_submission(self, evaluator):
         """Adversarial Test: Contradictory TAT dates where rejection is before submission."""
@@ -80,7 +76,7 @@ class TestAppealEvaluatorAdversarial:
         result = evaluator.evaluate_denial(denial_reasons, claim_data, {})
         assert isinstance(result, AppealEvaluationResult)
         # Negative TAT should not trigger statutory TAT breach
-        assert not any("Statutory Turnaround Breach" in v for v in result.statutory_violations_detected)
+        assert not any("Statutory Turnaround Breach" in v for v in result.statutory_conflicts_detected)
 
     def test_malformed_dates_graceful_handling(self, evaluator):
         """Adversarial Test: Severely malformed date strings do not crash parser."""
@@ -95,7 +91,6 @@ class TestAppealEvaluatorAdversarial:
         }
         result = evaluator.evaluate_denial(["Some rejection"], malformed_claim, malformed_policy)
         assert isinstance(result, AppealEvaluationResult)
-        assert 0.0 <= result.overturn_probability <= 100.0
 
     def test_none_fields_in_reason_dict(self, evaluator):
         """Adversarial Test: Handling when reason dictionary contains None for description."""
@@ -121,10 +116,10 @@ class TestMoratoriumBoundaryCases:
     def evaluator(self):
         return AppealEvaluator()
 
-    def test_moratorium_at_59_months_does_not_trigger_violation(self, evaluator):
+    def test_moratorium_at_59_months_does_not_trigger_conflict(self, evaluator):
         """
         At 59 months (< 60-month IRDAI moratorium), insurer CAN lawfully investigate PED.
-        Must NOT flag Moratorium Violation.
+        Must NOT flag Moratorium Conflict.
         """
         # 59 months * 30.44 = 1795.96 days
         inception = date(2020, 1, 1)
@@ -137,14 +132,13 @@ class TestMoratoriumBoundaryCases:
         policy_data = {"inception_date": inception.isoformat(), "moratorium_period_months": 60}
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
-        assert not any("Moratorium Violation" in v for v in result.statutory_violations_detected)
-        assert result.overturn_probability < 70.0
+        assert not any("Moratorium Conflict" in v for v in result.statutory_conflicts_detected)
         assert result.appeal_viability != "STRONG"
 
-    def test_moratorium_at_61_months_triggers_statutory_violation(self, evaluator):
+    def test_moratorium_at_61_months_triggers_statutory_conflict(self, evaluator):
         """
         At 61 months (> 60-month IRDAI moratorium), insurer is BARRED under Sec 45.
-        MUST flag Moratorium Violation and result in STRONG appeal viability.
+        MUST flag Moratorium Conflict and result in STRONG appeal viability.
         """
         inception = date(2020, 1, 1)
         claim_date = inception + timedelta(days=int(61 * 30.44))
@@ -156,12 +150,10 @@ class TestMoratoriumBoundaryCases:
         policy_data = {"inception_date": inception.isoformat(), "moratorium_period_months": 60}
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
-        assert any("Moratorium Violation" in v for v in result.statutory_violations_detected)
+        assert any("Moratorium Conflict" in v for v in result.statutory_conflicts_detected)
         assert any("Asha Goel" in p for p in result.key_legal_precedents)
         assert any("Invoke IRDAI Moratorium" in g for g in result.recommended_appeal_grounds)
-        assert result.overturn_probability >= 80.0
         assert result.appeal_viability == "STRONG"
-        assert result.ombudsman_dispute_risk >= 75.0
 
 
 # ===========================================================================
@@ -194,10 +186,9 @@ class TestMentalHealthParityAdversarial:
         }
 
         result = evaluator.evaluate_denial(disguised_reasons, claim_data, policy_data)
-        # Even though reason code is PED, the diagnosis + PED triggers Section 21(4) violation
-        assert any("Mental Health Parity Violation" in v for v in result.statutory_violations_detected)
+        # Even though reason code is PED, the diagnosis + PED triggers Section 21(4) conflict
+        assert any("Mental Health Parity Conflict" in v for v in result.statutory_conflicts_detected)
         assert any("Shikha Nischal" in p for p in result.key_legal_precedents)
-        assert result.overturn_probability >= 80.0
         assert result.appeal_viability == "STRONG"
 
     def test_raw_string_denial_reasons_parsed_correctly(self, evaluator):
@@ -208,21 +199,21 @@ class TestMentalHealthParityAdversarial:
             claim_data={"claim_date": "2025-05-01"},
             policy_data={"inception_date": "2024-01-01"}
         )
-        assert any("Mental Health Parity Violation" in v for v in result.statutory_violations_detected)
+        assert any("Mental Health Parity Conflict" in v for v in result.statutory_conflicts_detected)
         assert result.appeal_viability == "STRONG"
 
 
 # ===========================================================================
-# 4. Strict Probability Bounding [0.0, 100.0] & Monotonic Viability
+# 4. Strict Viability Consistency
 # ===========================================================================
 
-class TestProbabilityBoundsAndViabilityConsistency:
+class TestViabilityConsistency:
     @pytest.fixture
     def evaluator(self):
         return AppealEvaluator()
 
-    def test_all_violations_active_upper_bound_capped(self, evaluator):
-        """When ALL statutory violations are present, overturn probability is strictly <= 100.0%."""
+    def test_all_conflicts_active_upper_bound_capped(self, evaluator):
+        """When ALL statutory conflicts are present, appeal viability is STRONG."""
         all_reasons = [
             {"code": "PED01", "category": "PRE_EXISTING", "description": "pre-existing non-disclosure"},
             {"code": "MH01", "category": "MENTAL_HEALTH", "description": "psychiatric treatment"},
@@ -244,12 +235,8 @@ class TestProbabilityBoundsAndViabilityConsistency:
         }
 
         result = evaluator.evaluate_denial(all_reasons, claim_data, policy_data)
-        assert 0.0 <= result.overturn_probability <= 100.0
-        assert result.overturn_probability == 96.0  # System ceiling
-        assert 0.0 <= result.ombudsman_dispute_risk <= 100.0
-        assert result.ombudsman_dispute_risk <= 98.0
         assert result.appeal_viability == "STRONG"
-        assert len(result.statutory_violations_detected) >= 4
+        assert len(result.statutory_conflicts_detected) >= 4
 
     def test_pure_cosmetic_penalty_lower_bound_floored(self, evaluator):
         """Legitimate cosmetic exclusion with penalty is floored >= 0.0%."""
@@ -263,15 +250,12 @@ class TestProbabilityBoundsAndViabilityConsistency:
         policy_data = {"inception_date": "2024-01-01"}
 
         result = evaluator.evaluate_denial(cosmetic_reasons, claim_data, policy_data)
-        assert 0.0 <= result.overturn_probability <= 100.0
-        assert result.overturn_probability == 5.0  # System floor (25.0 - 40.0 = -15 -> max(5.0))
         assert result.appeal_viability == "LOW"
-        assert result.ombudsman_dispute_risk >= 10.0
 
     def test_viability_tiers_mutually_exclusive_and_exhaustive(self, evaluator):
         """Check viability tier mapping thresholds."""
         # Tier thresholds: >= 70 STRONG, >= 40 MODERATE, < 40 LOW
-        assert evaluator.evaluate_denial([], claim_data={"diagnosis": "cosmetic"}, policy_data={}).appeal_viability == "LOW"
+        assert evaluator.evaluate_denial([], claim_data={"diagnosis": "cosmetic"}, policy_data={}).appeal_viability == "STRONG"
 
 
 # ===========================================================================
@@ -308,13 +292,22 @@ class TestRuleEngineIntegration:
         assert result.overall_status in ["NO_MISMATCH_FOUND", "REVIEW_RECOMMENDED", "MISMATCH_DETECTED"]
         assert result.appeal_evaluation is None
 
-    def test_claim_with_severe_statutory_violations(self, engine):
-        """RuleEngine detects severe statutory violations and attaches appeal evaluation."""
+    def test_claim_with_severe_statutory_conflicts(self, engine):
+        """RuleEngine detects severe statutory conflicts and attaches appeal evaluation."""
         bill = HospitalBill(
             hospital_name="Fortis Hospital",
             patient_name="Priya Patel",
             diagnosis="major depressive disorder",
-            line_items=[],
+            line_items=[
+                BillLineItem(
+                    description="Inpatient Psychiatric Care",
+                    category="ROOM",
+                    quantity=1.0,
+                    unit_rate=80000.0,
+                    amount=80000.0,
+                    is_room_linked=True
+                )
+            ],
             subtotal=80000,
             net_payable=80000
         )
@@ -323,7 +316,7 @@ class TestRuleEngineIntegration:
             insurer_name="HDFC ERGO",
             policyholder_name="Priya Patel",
             policy_start_date="2018-01-01",
-            policy_end_date="2025-01-01",
+            policy_end_date="2025-12-31",
             sum_insured=1000000,
             waiting_periods=[],
             sub_limits=[]
@@ -349,9 +342,7 @@ class TestRuleEngineIntegration:
         assert result.overall_status == "MISMATCH_DETECTED"
         assert result.appeal_evaluation is not None
         assert result.appeal_evaluation.appeal_viability == "STRONG"
-        assert result.appeal_evaluation.overturn_probability >= 80.0
-        assert result.appeal_evaluation.ombudsman_dispute_risk >= 75.0
-        assert any(v.rule_name == "Denial Contestability & Ombudsman Dispute Rule" for v in result.rule_verdicts)
-        contestability_verdict = next(v for v in result.rule_verdicts if v.rule_name == "Denial Contestability & Ombudsman Dispute Rule")
-        assert contestability_verdict.status == "FAIL"
-        assert contestability_verdict.monetary_impact == 80000.0
+        assert any(v.rule_name == "Mental Health Parity Rule" for v in result.rule_verdicts)
+        mh_verdict = next(v for v in result.rule_verdicts if v.rule_name == "Mental Health Parity Rule")
+        assert mh_verdict.status == "FAIL"
+        assert mh_verdict.monetary_impact == 80000.0

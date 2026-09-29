@@ -59,7 +59,7 @@ A comprehensive architectural and empirical verification survey was conducted ac
   - Calculation Delta Reconciliation: Proportional dual bars comparing Insurer Calculated settlement (struck through in red) vs Statutory Correct Allowable amount (in emerald).
   - 1-Click Clipboard Citation: Copies statutory regulatory citation to clipboard with toast notification.
   - Legal Appeal Directives: Callout boxes containing legal grievance arguments.
-  - `VerdictsFilterTabs`: Tab bar with dynamic counters for All, Tier 1, Tier 2, and Violations Only.
+  - `VerdictsFilterTabs`: Tab bar with dynamic counters for All, Tier 1, Tier 2, and Conflicts Only.
 - **Latent Issues & Vulnerabilities**:
   1. *Component Duplication*: `src/components/VerdictCard.jsx` (legacy simple version, 117 lines) vs `src/components/analysis/VerdictCard.jsx` (modern enterprise version, 385 lines). `Analysis.jsx` imports the enterprise version, while legacy tests inspect the old version.
   2. *Null Pointer on `verdict`*: If `verdict={null}` is passed, line 35 (`verdict.status === 'FAIL'`) throws `TypeError`.
@@ -104,7 +104,7 @@ A comprehensive architectural and empirical verification survey was conducted ac
 - **Primary Features**:
   - Pure SVG `StatusDonutChart`: Interactive slices with hover effects, slice gap calculations (`2.5px`), and click-to-filter cross-filtering callback.
   - Pure CSS/SVG `FinancialWaterfallChart`: Visualizes Billed → Approved → Disallowed → Recoverable → Net Settlement with floating metric pills and hover tooltips.
-  - `RuleViolationBarChart`: Lists top IRDAI rule breaches, with sort toggle by Frequency vs Recoverable Amount, win-rate pills, and citation copying.
+  - `RuleConflictBarChart`: Lists top IRDAI rule breaches, with sort toggle by Frequency vs Recoverable Amount, win-rate pills, and citation copying.
 - **Latent Issues & Vulnerabilities**:
   1. **CRITICAL [HIGH] BUG (`WATERFALL-02`)**: Lines 442, 446, 450 in `FinancialWaterfallChart`:
      ```jsx
@@ -161,7 +161,7 @@ A comprehensive architectural and empirical verification survey was conducted ac
 | **Main Test Runner** | `tests/runner.mjs` (`npm test`) | Node.js E2E & Contract Harness | **PASSED (72/72)** | 100% pass rate across Tier 1, 2, 3, 4 |
 | - *Tier 1: Feature Coverage* | `tests/tier1-feature-coverage.test.mjs` | Contract & Schema | Passed (30/30) | API endpoints, normalizers, TypeScript data models, status badge mapping, currency formatting, stepper machine |
 | - *Tier 2: Boundary Cases* | `tests/tier2-boundary-cases.test.mjs` | Adversarial Boundaries | Passed (28/28) | 0-25MB file boundaries, MIME types, extreme crore amounts, room rent ratios, moratorium 36m vs 60m, ELA score 0-100, CGHS multipliers, divide-by-zero math |
-| - *Tier 3: Combinations* | `tests/tier3-combinations.test.mjs` | Cross-Module Matrix | Passed (9/9) | Tripartite documents, concurrent rule violations, compound fraud risk, clinical consistency, cryptographic SHA-256 chain integrity |
+| - *Tier 3: Combinations* | `tests/tier3-combinations.test.mjs` | Cross-Module Matrix | Passed (9/9) | Tripartite documents, concurrent rule conflicts, compound fraud risk, clinical consistency, cryptographic SHA-256 chain integrity |
 | - *Tier 4: Real-World E2E* | `tests/tier4-real-world-scenarios.test.mjs` | User Journey Workflows | Passed (5/5) | Apollo Hospital bill journey, high-risk fraud journey, clean settlement journey, moratorium protection, network recovery |
 | **SSR Component Stress** | `tests/run-stress-tests.mjs` | Vite SSR Runtime Bundle | **PASSED (41/41)** | StatusBadge, MetricCard, Skeletons, ErrorState, Topbar, App Shell routes, ExecutiveKpiCards, DashboardCharts, ClaimsTable |
 | **Challenger M1: Adversarial**| `tests/challenger-m1-stress.mjs` | Normalizer Stress | **PASSED (34/34)** | Extreme inputs, nulls, primitive strings, shallow clone isolation, 11 offline mock endpoints |

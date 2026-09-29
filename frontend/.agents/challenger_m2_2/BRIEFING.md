@@ -33,11 +33,11 @@ Adversarially stress test SVG math, chart geometry, and visualization resilience
   3. Waterfall chart with 0 billed, negative recoverable, disallowed > billed causes broken coordinates/negatives/NaNs. [TESTED: CRITICAL VULNERABILITY CONFIRMED — maxVal=0 causes height: NaNpx and marginBottom: NaNpx]
   4. Sparkline curve generator in MetricCard with [], [42], [10, 10, 10], negatives, null/undefined inputs causes division by zero, invalid d path, or crashes. [TESTED: LARGELY SAFE, zero-range guarded by `|| 1`; corrupted array with undefined propagates NaN into path]
   5. Cross-filtering callbacks when onSelectStatusFilter is undefined or null throws TypeError. [TESTED: SAFE for undefined/null; missing typeof === 'function' check throws on truthy non-functions]
-  6. RuleViolationBarChart when all rules have 0 count and 0 impact produces width: NaN%. [TESTED: VULNERABILITY CONFIRMED]
+  6. RuleConflictBarChart when all rules have 0 count and 0 impact produces width: NaN%. [TESTED: VULNERABILITY CONFIRMED]
 - **Vulnerabilities found**:
   1. `FinancialWaterfallChart`: `maxVal = 0` when `total_recovered_amount = 0`, producing `height: NaNpx; marginBottom: NaNpx;` (HIGH).
   2. `StatusDonutChart`: 100% single-category ring has an unclosed 2.5px gap artifact due to `dynamicBreakdown.length > 1` check (MEDIUM).
-  3. `RuleViolationBarChart`: `maxVal = 0` when rules have 0 count/impact produces `width: NaN%` (MEDIUM).
+  3. `RuleConflictBarChart`: `maxVal = 0` when rules have 0 count/impact produces `width: NaN%` (MEDIUM).
   4. `formatCompactInr`: Negative amounts format as `₹-50000` instead of `-₹50K` (LOW).
   5. `SparklineCurve`: Corrupted array e.g. `[10, undefined, 30]` propagates `NaN` into SVG `d` attribute (LOW).
   6. `onSelectStatusFilter`: Missing `typeof === 'function'` check allows truthy non-functions to throw (LOW).

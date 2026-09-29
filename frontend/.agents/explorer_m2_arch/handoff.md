@@ -14,7 +14,7 @@
    - Card mapping in lines 32–37 hardcodes static trends (`'+12%'`, `'+5%'`, `'+18%'`, `'-2'`) and forwards them to a legacy wrapper `StatsCard`.
    - Lines 51–73 render raw animated pulse `<div>` elements instead of the shared enterprise skeleton components already available in `src/components/common/Skeletons.jsx`.
    - Error handling in lines 40–43 only triggers `toast.error('Failed to load dashboard data')` and sets `isLoading: false`, leaving an empty/broken table with no retry mechanism or error recovery UI.
-   - Entirely lacks interactive data visualizations (no SVG donut for status distribution, no waterfall chart for recoverable capital, and no rule violation frequency ranking).
+   - Entirely lacks interactive data visualizations (no SVG donut for status distribution, no waterfall chart for recoverable capital, and no rule conflict frequency ranking).
    - Lines 90–155 implement a rudimentary HTML `<table>` lacking search input, status tab filters, column sorting, document status pills (`BILL`/`POL`/`REJ`), pagination, and export capabilities.
    - Fails to read or synchronize with the URL query parameter `?q=...` produced by `Topbar.jsx:60` when an auditor executes a global search (`Ctrl+K`).
 
@@ -45,7 +45,7 @@
 2. **Component Modularity Architecture**:
    - To adhere to clean modular boundaries, the dashboard view must be decomposed into three primary layers:
      - `src/pages/Dashboard.jsx`: Orchestrates data fetching, auto-refresh polling, URL query sync, and layout scaffolding.
-     - `src/components/dashboard/DashboardCharts.jsx`: Dedicated visualization module housing the Status Distribution Donut, Recoverable Waterfall, and Rule Violation Frequency charts.
+     - `src/components/dashboard/DashboardCharts.jsx`: Dedicated visualization module housing the Status Distribution Donut, Recoverable Waterfall, and Rule Conflict Frequency charts.
      - `src/components/dashboard/ClaimsTable.jsx`: Enterprise data table handling search, filter tabs, multi-column sorting, document status badges, pagination, and CSV export.
 
 3. **Interactive Visualization Strategy (Pure SVG / CSS)**:
@@ -53,7 +53,7 @@
    - SVG and CSS-based charting provides zero bundle overhead, instantaneous hydration, deterministic layout without canvas blur, and effortless Tailwind CSS color matching:
      - *Donut Chart*: SVG `<circle>` elements using `strokeDasharray` and `strokeDashoffset` on a 160x160 viewBox, with center counter and hover-linked tooltips. Clicking a segment passes the selected status back to `Dashboard.jsx` to filter the table.
      - *Recoverable Capital Waterfall*: Multi-segment proportion bar and categorized breakdown cards displaying room rent vs fixed procedure vs moratorium underpayments with IRDAI statutory citations.
-     - *Statutory Rule Violation Frequency*: Horizontal ranked percentage bars highlighting top insurer non-compliance patterns (IRDAI Master Circular May 2024, Insurance Act Section 45, Mental Health Parity Act 2017).
+     - *Statutory Rule Conflict Frequency*: Horizontal ranked percentage bars highlighting top insurer non-compliance patterns (IRDAI Master Circular May 2024, Insurance Act Section 45, Mental Health Parity Act 2017).
 
 4. **Claims Table Data Flow & Cross-Component Synchronization**:
    - When an auditor types in `Topbar.jsx` or presses `Ctrl+K`, the router navigates to `/?q=<query>`.
@@ -110,9 +110,9 @@ Render 4 `MetricCard` components using the following configuration:
     tooltip="Total hospital and insurance claims ingested and adjudicated by the engine"
   />
 
-  {/* Card 2: Violations Identified */}
+  {/* Card 2: Conflicts Identified */}
   <MetricCard
-    label="Violations Identified"
+    label="Conflicts Identified"
     value={(stats?.mismatches_found ?? 0).toLocaleString('en-IN')}
     icon={AlertTriangle}
     trend={`${stats?.total_claims ? Math.round(((stats.mismatches_found || 0) / stats.total_claims) * 100) : 32.8}%`}
@@ -185,7 +185,7 @@ const formatInr = (val) => {
 
 export default function DashboardCharts({ claims = [], stats = null, onSelectStatusFilter = null }) {
   const [hoveredSegment, setHoveredSegment] = useState(null);
-  const [activeTab, setActiveTab] = useState('waterfall'); // 'waterfall' | 'violations'
+  const [activeTab, setActiveTab] = useState('waterfall'); // 'waterfall' | 'conflicts'
 
   // 1. Status Distribution Calculation
   const distribution = useMemo(() => {
@@ -210,7 +210,7 @@ export default function DashboardCharts({ claims = [], stats = null, onSelectSta
 
     const total = claims.length || 1;
     return [
-      { id: 'MISMATCH', label: 'Violations / Mismatch', count: mismatches, color: '#E11D48', bg: 'bg-rose-500', text: 'text-rose-600', pct: Math.round((mismatches / total) * 100) },
+      { id: 'MISMATCH', label: 'Conflicts / Mismatch', count: mismatches, color: '#E11D48', bg: 'bg-rose-500', text: 'text-rose-600', pct: Math.round((mismatches / total) * 100) },
       { id: 'COMPLETED', label: 'Clean / Compliant', count: completed, color: '#059669', bg: 'bg-emerald-500', text: 'text-emerald-600', pct: Math.round((completed / total) * 100) },
       { id: 'PENDING', label: 'Under Review / In Pipeline', count: pending, color: '#D97706', bg: 'bg-amber-500', text: 'text-amber-600', pct: Math.round((pending / total) * 100) },
       { id: 'FAILED', label: 'Extraction Issues', count: failed, color: '#64748B', bg: 'bg-slate-500', text: 'text-slate-600', pct: Math.round((failed / total) * 100) },
@@ -261,8 +261,8 @@ export default function DashboardCharts({ claims = [], stats = null, onSelectSta
     ];
   }, [stats]);
 
-  // 3. Rule Violations Frequency Data
-  const violationsData = [
+  // 3. Rule Conflicts Frequency Data
+  const conflictsData = [
     {
       rule: 'Proportionate Scaledown on Medical Charges',
       citation: 'IRDAI Master Cir May 2024',
@@ -408,7 +408,7 @@ export default function DashboardCharts({ claims = [], stats = null, onSelectSta
         </div>
       </div>
 
-      {/* Visual Widget 2: Tabbed Financial Waterfall & Violations (7 Cols) */}
+      {/* Visual Widget 2: Tabbed Financial Waterfall & Conflicts (7 Cols) */}
       <div className="lg:col-span-7 card-enterprise p-6 flex flex-col justify-between">
         <div>
           {/* Header with Tab Switcher */}
@@ -431,12 +431,12 @@ export default function DashboardCharts({ claims = [], stats = null, onSelectSta
                 Capital Waterfall
               </button>
               <button
-                onClick={() => setActiveTab('violations')}
+                onClick={() => setActiveTab('conflicts')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                  activeTab === 'violations' ? 'bg-white text-brand-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  activeTab === 'conflicts' ? 'bg-white text-brand-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Violation Frequency
+                Conflict Frequency
               </button>
             </div>
           </div>
@@ -487,10 +487,10 @@ export default function DashboardCharts({ claims = [], stats = null, onSelectSta
             </div>
           )}
 
-          {/* TAB 2: VIOLATION FREQUENCY */}
-          {activeTab === 'violations' && (
+          {/* TAB 2: CONFLICT FREQUENCY */}
+          {activeTab === 'conflicts' && (
             <div className="space-y-3.5 mt-5">
-              {violationsData.map((v, idx) => (
+              {conflictsData.map((v, idx) => (
                 <div key={idx} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
@@ -717,7 +717,7 @@ export default function ClaimsTable({
 
   const tabs = [
     { id: 'ALL', label: 'All Ingested', count: tabCounts.ALL },
-    { id: 'MISMATCH', label: 'Violations & Mismatches', count: tabCounts.MISMATCH, badgeClass: 'bg-rose-100 text-rose-700' },
+    { id: 'MISMATCH', label: 'Conflicts & Mismatches', count: tabCounts.MISMATCH, badgeClass: 'bg-rose-100 text-rose-700' },
     { id: 'PENDING', label: 'Under Review / In Triage', count: tabCounts.PENDING, badgeClass: 'bg-amber-100 text-amber-700' },
     { id: 'COMPLETED', label: 'Clean Settlements', count: tabCounts.COMPLETED, badgeClass: 'bg-emerald-100 text-emerald-700' },
     { id: 'FAILED', label: 'Extraction Failed', count: tabCounts.FAILED, badgeClass: 'bg-slate-200 text-slate-700' },
@@ -1252,7 +1252,7 @@ export default function Dashboard() {
         />
 
         <MetricCard
-          label="Violations Identified"
+          label="Conflicts Identified"
           value={(stats?.mismatches_found ?? 0).toLocaleString('en-IN')}
           icon={AlertTriangle}
           trend={`${stats?.total_claims ? Math.round(((stats.mismatches_found || 0) / stats.total_claims) * 100) : 32.8}%`}
@@ -1260,7 +1260,7 @@ export default function Dashboard() {
           trendLabel="discrepancy rate"
           variant="rose"
           sparkline={[12, 18, 15, 22, 28, 31, 38, 42]}
-          tooltip="Claims with room rent proportionate deduction breaches, moratorium violations, or unbundling"
+          tooltip="Claims with room rent proportionate deduction breaches, moratorium conflicts, or unbundling"
         />
 
         <MetricCard
@@ -1334,9 +1334,9 @@ npm run build
 - [ ] Verify `Dashboard.jsx` displays 4 `MetricCard`s with Indian Rupee formatting, sparklines, and tooltips.
 - [ ] Verify `DashboardCharts.jsx` renders the interactive Donut with slice hover states and center counter.
 - [ ] Verify clicking a slice in the Donut chart filters the `ClaimsTable.jsx` and scrolls smoothly to it.
-- [ ] Verify `DashboardCharts.jsx` toggle between "Capital Waterfall" and "Violation Frequency" works smoothly.
+- [ ] Verify `DashboardCharts.jsx` toggle between "Capital Waterfall" and "Conflict Frequency" works smoothly.
 - [ ] Verify `ClaimsTable.jsx` search bar filters by Claim ID, Patient, Policy, and Hospital in real-time.
-- [ ] Verify `ClaimsTable.jsx` filter tabs (`All`, `Violations`, `Under Review`, `Clean`, `Failed`) update counts and rows.
+- [ ] Verify `ClaimsTable.jsx` filter tabs (`All`, `Conflicts`, `Under Review`, `Clean`, `Failed`) update counts and rows.
 - [ ] Verify Document Trio pills (`BILL`, `POL`, `REJ`) display correctly.
 - [ ] Verify sorting on Claim ID, Patient, Impact, and Date works in ascending and descending directions.
 - [ ] Verify pagination controls (rows per page, next/prev) work correctly.

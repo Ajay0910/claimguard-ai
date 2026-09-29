@@ -88,7 +88,7 @@ Direct examination of the ClaimGuard AI codebase and project requirements reveal
    - `documents_status` is an optional object with boolean flags `{ bill, policy, rejection }`.
    - `patient_name` and `patient` are dual aliases; `monetary_impact` and `impact` are dual aliases.
    - `hospital` indicates the healthcare facility (e.g. "Apollo Hospitals, Bangalore").
-   - `deduction_type` contains the legal/clinical deduction rationale (e.g. "Proportionate Deduction Violation", "Mental Health Parity Breach").
+   - `deduction_type` contains the legal/clinical deduction rationale (e.g. "Proportionate Deduction Conflict", "Mental Health Parity Breach").
 
 3. **Status Semantics (`src/components/common/StatusBadge.jsx:8-71`):**
    - Supports sizes: `sm`, `md`, `lg`.
@@ -121,7 +121,7 @@ Direct examination of the ClaimGuard AI codebase and project requirements reveal
 3. **Status Filter Categorization Logic:**
    The prompt requires 5 status tabs: "All", "Flagged / Discrepancy", "Approved", "Under Review", and "Disallowed".
    - **All**: All claims in dataset (`claims.length`).
-   - **Flagged / Discrepancy**: Claims where statutory violations, fraud, or deductions are detected (`['FAIL', 'FAILED', 'MISMATCH_DETECTED', 'HIGH_RISK', 'TAMPERED']` or `impact > 0`).
+   - **Flagged / Discrepancy**: Claims where statutory conflicts, fraud, or deductions are detected (`['FAIL', 'FAILED', 'MISMATCH_DETECTED', 'HIGH_RISK', 'TAMPERED']` or `impact > 0`).
    - **Approved**: Clean claims with zero dispute (`['PASS', 'APPROVED', 'CLEAN', 'NO_MISMATCH_FOUND']` or `status === 'COMPLETED' && (!impact || impact === 0)`).
    - **Under Review**: Claims currently processing or requiring manual audit review (`['REVIEW_RECOMMENDED', 'NEEDS_REVIEW', 'WARNING', 'PENDING', 'ANALYZING', 'RUNNING', 'EXTRACTING', 'PROCESSING']`).
    - **Disallowed**: Claims with identified monetary deductions or partial settlements (`impact > 0` or `deduction_type.includes('deduction')` or `status === 'PARTIAL_SETTLEMENT'`).
@@ -304,7 +304,7 @@ export const matchesStatusTab = (claim, tabKey) => {
       return (
         impact > 0 ||
         deduction.includes('deduction') ||
-        deduction.includes('violation') ||
+        deduction.includes('conflict') ||
         deduction.includes('breach') ||
         status === 'PARTIAL_SETTLEMENT'
       );

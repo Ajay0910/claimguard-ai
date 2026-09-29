@@ -55,10 +55,10 @@
    - Status distribution in `mockStats` & `mockClaims`:
      - Processed / Total: `128`
      - Clean / Approved / Pass: `72` (56.25%)
-     - Flagged Mismatches / Violations: `42` (32.81%)
+     - Flagged Mismatches / Conflicts: `42` (32.81%)
      - Under Review / Pending: `14` (10.94%)
      - Repudiated / Disallowed: `2` (1.56%)
-   - Statutory rule violations cited in `mockAnalysisResult`:
+   - Statutory rule conflicts cited in `mockAnalysisResult`:
      - *Proportionate Deduction Audit (IRDAI May 2024 Cl 12.3)* — FAIL, impact ₹32,000
      - *Clause Timeline & Moratorium Period Protection (Sec 45)* — FAIL, impact ₹10,500
      - *Tariff Deviation (CGHS Bengaluru Benchmark)* — Anomaly ₹6,300
@@ -129,16 +129,16 @@
      - Step 5 (Net Audited): Base $= 0$, Top $= 22.65L$, Color: Medical Teal-700.
      - Dashed connector bridge lines link Step 2 top to Step 3 bottom, Step 1 top to Step 3 top, and Step 4 top to Step 5 top.
 
-4. **Feature 7 (Rule Violation Frequency Bar Chart)**:
-   - *Observation*: Top violated statutory rules with violation count and percentage progress bars.
+4. **Feature 7 (Rule Conflict Frequency Bar Chart)**:
+   - *Observation*: Top violated statutory rules with conflict count and percentage progress bars.
    - *Statutory Rules*:
-     1. Proportionate Deduction Scaling (IRDAI Master Circular May 2024, Clause 12.3) — 38 violations (32.2%), ₹4.85L recovered.
-     2. Clause 4.2 Room Rent Capping — 29 violations (24.6%), ₹3.92L recovered.
-     3. Consumables Non-Payable Exclusion (List 1–4) — 24 violations (20.3%), ₹2.15L recovered.
-     4. Section 45 Moratorium Contestation (60-month rule) — 16 violations (13.6%), ₹2.84L recovered.
-     5. Tele-consultation & Daycare Exclusion — 11 violations (9.3%), ₹52.5K recovered.
+     1. Proportionate Deduction Scaling (IRDAI Master Circular May 2024, Clause 12.3) — 38 conflicts (32.2%), ₹4.85L recovered.
+     2. Clause 4.2 Room Rent Capping — 29 conflicts (24.6%), ₹3.92L recovered.
+     3. Consumables Non-Payable Exclusion (List 1–4) — 24 conflicts (20.3%), ₹2.15L recovered.
+     4. Section 45 Moratorium Contestation (60-month rule) — 16 conflicts (13.6%), ₹2.84L recovered.
+     5. Tele-consultation & Daycare Exclusion — 11 conflicts (9.3%), ₹52.5K recovered.
    - *Interactive Controls*:
-     - Tab filter: Sort by "Violation Frequency" vs "Recoverable Amount (₹)".
+     - Tab filter: Sort by "Conflict Frequency" vs "Recoverable Amount (₹)".
      - Statutory Citation copy button (copies exact IRDAI reference to clipboard for grievance filings).
      - Tier 1 (Statutory Legal Breach) vs Tier 2 (Tariff / Documentation Deviation) badges.
 
@@ -147,7 +147,7 @@
    - Section 2: Dashboard Visualizations (`grid-cols-1 lg:grid-cols-12 gap-6`):
      - Donut Chart: `lg:col-span-5`
      - Waterfall Chart: `lg:col-span-7`
-     - Rule Violation Bar: `lg:col-span-12` (full-width ranking table with progress meters).
+     - Rule Conflict Bar: `lg:col-span-12` (full-width ranking table with progress meters).
 
 ---
 
@@ -155,7 +155,7 @@
 
 1. **Backend Endpoint Constraints**:
    - The backend `/stats` endpoint currently returns aggregate counts (`total_claims`, `mismatches_found`, `total_recovered_amount`, `pending_analysis`).
-   - The Waterfall and Rule Violation frequencies are enriched by default analytics datasets (`defaultDashboardAnalytics`) and dynamically calibrated against the active `stats` and `claims` props passed into `DashboardCharts`. When a backend `/analytics` endpoint is added in future iterations, the component will seamlessly consume it via the optional `analyticsData` prop.
+   - The Waterfall and Rule Conflict frequencies are enriched by default analytics datasets (`defaultDashboardAnalytics`) and dynamically calibrated against the active `stats` and `claims` props passed into `DashboardCharts`. When a backend `/analytics` endpoint is added in future iterations, the component will seamlessly consume it via the optional `analyticsData` prop.
 2. **Read-Only Scope**:
    - As an explorer, no direct modifications to existing source files are made during this task. Complete, copy-paste-ready JSX templates, unit tests, and integration instructions are provided in the Conclusion section.
 3. **Number Formatting**:
@@ -461,7 +461,7 @@ export default function ExecutiveKpiCards({ stats = {}, claims = [] }) {
         metaText="Discrepancy: ₹2.14L in dispute"
         sparkline={auditTrend}
         sparklineColor="amber"
-        tooltip="Claims with detected IRDAI clause violations, room rent caps, or pending forensic review."
+        tooltip="Claims with detected IRDAI clause conflicts, room rent caps, or pending forensic review."
       />
 
       {/* 3. Total Processed Claims */}
@@ -539,7 +539,7 @@ const formatCompactInr = (amount) => {
 export const defaultDashboardAnalytics = {
   statusBreakdown: [
     { id: 'approved', label: 'Approved (Clean)', count: 72, color: '#059669', hoverColor: '#10B981', ringClass: 'text-emerald-600', bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { id: 'flagged', label: 'Flagged / Violations', count: 42, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
+    { id: 'flagged', label: 'Flagged / Conflicts', count: 42, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
     { id: 'review', label: 'Under Review', count: 14, color: '#D97706', hoverColor: '#FBBF24', ringClass: 'text-amber-600', bgClass: 'bg-amber-50 text-amber-700 border-amber-200' },
     { id: 'disallowed', label: 'Repudiated', count: 2, color: '#64748B', hoverColor: '#94A3B8', ringClass: 'text-slate-600', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
   ],
@@ -550,7 +550,7 @@ export const defaultDashboardAnalytics = {
     { id: 'recoverable', name: 'Contested & Recoverable', amount: 645000, base: 1620000, delta: 645000, type: 'recovery', color: '#059669', description: 'Identified wrongful deductions backed by IRDAI regulations (+₹6.45L)' },
     { id: 'net', name: 'Audited Net Settlement', amount: 2265000, base: 0, delta: 2265000, type: 'final', color: '#0D9488', description: 'Projected total rightful payout after grievance appeal (91.3%)' },
   ],
-  ruleViolations: [
+  ruleConflicts: [
     {
       id: 'PROP-DED',
       name: 'Proportionate Deduction Scaling',
@@ -875,9 +875,9 @@ export function FinancialWaterfallChart({ steps = defaultDashboardAnalytics.wate
 }
 
 /**
- * 3. Rule Violation Frequency Bar Chart
+ * 3. Rule Conflict Frequency Bar Chart
  */
-export function RuleViolationBarChart({ rules = defaultDashboardAnalytics.ruleViolations }) {
+export function RuleConflictBarChart({ rules = defaultDashboardAnalytics.ruleConflicts }) {
   const [sortBy, setSortBy] = useState('count'); // 'count' | 'impact'
   const [copiedId, setCopiedId] = useState(null);
 
@@ -904,7 +904,7 @@ export function RuleViolationBarChart({ rules = defaultDashboardAnalytics.ruleVi
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-brand-600" />
-            Top Statutory Rule Violations & Monetary Leverage
+            Top Statutory Rule Conflicts & Monetary Leverage
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
             Frequently cited IRDAI circulars and wrongful disallowance grounds across audited claims
@@ -966,7 +966,7 @@ export function RuleViolationBarChart({ rules = defaultDashboardAnalytics.ruleVi
 
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-slate-900 font-financial">
-                    {rule.count} violations
+                    {rule.count} conflicts
                   </span>
                   <span className="text-xs font-bold text-emerald-700 font-financial bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                     {formatInr(rule.monetaryImpact)}
@@ -1035,8 +1035,8 @@ export default function DashboardCharts({
         </div>
       </div>
 
-      {/* Full-width Row: Rule Violations Bar Chart */}
-      <RuleViolationBarChart rules={analyticsData.ruleViolations} />
+      {/* Full-width Row: Rule Conflicts Bar Chart */}
+      <RuleConflictBarChart rules={analyticsData.ruleConflicts} />
     </div>
   );
 }
@@ -1085,7 +1085,7 @@ export default function Dashboard() {
       {/* Feature 6: Executive KPI Cards with Sparklines */}
       <ExecutiveKpiCards stats={stats} claims={claims} />
 
-      {/* Feature 7: Interactive SVG Donut, Financial Waterfall & Rule Violations */}
+      {/* Feature 7: Interactive SVG Donut, Financial Waterfall & Rule Conflicts */}
       <DashboardCharts stats={stats} claims={claims} />
 
       {/* Feature 8: Enterprise Claims Data Table */}
@@ -1111,7 +1111,7 @@ To independently verify the technical blueprint and components:
    - Verify `MetricCard.jsx` retains backwards compatibility with existing scalar props (`trend`, `isPositive`, `subtitle`).
    - Verify `StatusDonutChart` renders with zero division errors when passed `[]` or zero total claims.
    - Verify `FinancialWaterfallChart` renders horizontal connector lines and correct INR values on bar hover.
-   - Verify `RuleViolationBarChart` toggles between Frequency and Impact sorting and copies citation text to clipboard.
+   - Verify `RuleConflictBarChart` toggles between Frequency and Impact sorting and copies citation text to clipboard.
 3. **Build & Lint Verification**:
    - Ensure all JSX components compile cleanly with `npm run build` (Vite 6).
    - Zero runtime warnings regarding missing SVG attributes or hydration mismatches.

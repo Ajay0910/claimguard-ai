@@ -57,23 +57,23 @@ def check_authenticity(bill: HospitalBill, policy: InsurancePolicy, rejection=No
         issues.append("Policy number missing from the insurance document.")
         
     if issues:
-        return RuleVerdict(
+        return RuleVerdict(finding_type="FRAUD_SIGNAL", 
             rule_name="Authenticity Verification Check",
             status="FAIL",
             finding="Authenticity verification failed: " + " | ".join(issues),
-            insurer_calculation=0.0,
-            correct_calculation=0.0,
+            insurer_approved_amount=0.0,
+            expected_admissible_amount=0.0,
             monetary_impact=monetary_impact,
             regulatory_citation="IRDAI Master Circular (KYC & Provider Registration)",
             appeal_recommendation="Provide valid hospital registration (ROHINI ID) and active policy documentation."
         )
         
-    return RuleVerdict(
+    return RuleVerdict(finding_type="FRAUD_SIGNAL", 
         rule_name="Authenticity Verification Check",
         status="PASS",
         finding="Hospital registration and Policy number successfully verified against external registries.",
-        insurer_calculation=0.0,
-        correct_calculation=0.0,
-        monetary_impact=0.0,
+        insurer_approved_amount=0.0,
+        expected_admissible_amount=0.0,
+        monetary_impact=None,
         regulatory_citation="IRDAI Master Circular (KYC & Provider Registration)"
     )

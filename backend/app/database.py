@@ -28,8 +28,7 @@ async def init_db():
         from sqlalchemy import text
         if "sqlite" in ASYNC_DATABASE_URL:
             await conn.execute(text("PRAGMA foreign_keys=ON"))
-        await conn.run_sync(Base.metadata.create_all)
-
+        # Removed create_all to stop wiping/relying on auto-create. Use Alembic instead.
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session

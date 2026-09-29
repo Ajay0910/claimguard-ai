@@ -26,7 +26,7 @@ Write Ownership (You own these files exclusively):
 - src/App.jsx
 
 Mandatory Integrity Warning:
-DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
+DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity conflicts WILL be detected and your work WILL be rejected.
 
 Instructions:
 1. Read the blueprint in c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\explorer_m1_foundations\handoff.md carefully. It contains the exact, complete, verified code for all target files.

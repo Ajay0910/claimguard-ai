@@ -23,6 +23,7 @@ class Claim(Base):
     
     documents: Mapped[List["Document"]] = relationship(back_populates="claim", cascade="all, delete-orphan")
     analysis_runs: Mapped[List["AnalysisRun"]] = relationship(back_populates="claim", cascade="all, delete-orphan")
+    evidence_ledger_entries: Mapped[List["EvidenceLedgerRecord"]] = relationship(back_populates="claim", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -36,6 +37,7 @@ class Document(Base):
     file_path: Mapped[str] = mapped_column(String)
     content_type: Mapped[str] = mapped_column(String)
     file_size_bytes: Mapped[int] = mapped_column()
+    document_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     extracted_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     extraction_confidence: Mapped[Optional[float]] = mapped_column(nullable=True)
     extraction_method: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -58,6 +60,7 @@ class AnalysisRun(Base):
 
     claim: Mapped["Claim"] = relationship(back_populates="analysis_runs")
     rule_verdicts: Mapped[List["RuleVerdictRecord"]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
+    evidence_ledger_entries: Mapped[List["EvidenceLedgerRecord"]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
 
 class RuleVerdictRecord(Base):
     __tablename__ = "rule_verdicts"
@@ -74,9 +77,19 @@ class RuleVerdictRecord(Base):
     monetary_impact: Mapped[Optional[float]] = mapped_column(nullable=True)
     regulatory_citation: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     appeal_recommendation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    evidence_data: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)
+    
+    actual_claim_fact: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    applicable_policy_rule: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    insurer_applied_action: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    expected_action: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    difference: Mapped[Optional[float]] = mapped_column(nullable=True)
+    evidence: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     analysis_run: Mapped["AnalysisRun"] = relationship(back_populates="rule_verdicts")
+    evidence_ledger_entries: Mapped[List["EvidenceLedgerRecord"]] = relationship(back_populates="rule_verdict", cascade="all, delete-orphan")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -89,3 +102,30 @@ class AuditLog(Base):
     previous_hash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     entry_hash: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class EvidenceLedgerRecord(Base):
+    __tablename__ = "evidence_ledger_records"
+    
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"), index=True)
+    analysis_run_id: Mapped[Optional[str]] = mapped_column(ForeignKey("analysis_runs.id"), nullable=True, index=True)
+    rule_verdict_id: Mapped[Optional[str]] = mapped_column(ForeignKey("rule_verdicts.id"), nullable=True, index=True)
+    document_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    document_hash: Mapped[str] = mapped_column(String(64), index=True)
+    page_number: Mapped[int] = mapped_column(default=1)
+    bounding_box: Mapped[Optional[List[float]]] = mapped_column(JSON, nullable=True)
+    section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    source_text: Mapped[str] = mapped_column(Text)
+    extracted_value: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    normalized_value: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    rule_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    formula: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    calculation_inputs: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    final_output: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    confidence: Mapped[float] = mapped_column(default=1.0)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    
+    claim: Mapped["Claim"] = relationship(back_populates="evidence_ledger_entries")
+    analysis_run: Mapped[Optional["AnalysisRun"]] = relationship(back_populates="evidence_ledger_entries")
+    rule_verdict: Mapped[Optional["RuleVerdictRecord"]] = relationship(back_populates="evidence_ledger_entries")

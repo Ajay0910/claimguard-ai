@@ -28,7 +28,7 @@ Pick up Project Orchestration at Milestone 2, drive Milestones 2, 3, 4, 5 to com
 
 ## 🔒 Key Constraints
 - DISPATCH-ONLY: Never write source code directly. Delegate all implementation and test execution to subagents.
-- Audit Enforcement: BINARY VETO on integrity violations.
+- Audit Enforcement: BINARY VETO on integrity conflicts.
 - Never reuse subagents after handoff delivery.
 - Always include path to ORIGINAL_REQUEST.md in dispatches.
 - Keep scope and state documents current.

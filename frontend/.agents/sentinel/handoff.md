@@ -3,7 +3,7 @@
 ## 1. Observation
 - The user requested a complete enterprise overhaul of the ClaimGuard AI React frontend across three core pillars:
   1. **R1. Enterprise UI Overhaul**: Modern enterprise healthcare styling, clinical dark midnight slate / medical teal hierarchy, high information density, cohesive typography.
-  2. **R2. Advanced Visualizations**: Rich interactive visual indicators, progress bars, SVG/CSS charts (Status Donut, Financial Waterfall, Rule Violation Bar), 240° ELA Tamper Gauge, Document Heatmap viewer with opacity blending, and CGHS Tariff Benchmark comparator.
+  2. **R2. Advanced Visualizations**: Rich interactive visual indicators, progress bars, SVG/CSS charts (Status Donut, Financial Waterfall, Rule Conflict Bar), 240° ELA Tamper Gauge, Document Heatmap viewer with opacity blending, and CGHS Tariff Benchmark comparator.
   3. **R3. UX Polish**: Shimmering loading skeletons, structured error boundaries with diagnostics & retry, smooth multi-step upload wizard with metadata inspection cards, and 1-click Apollo sample loader.
   4. **Full Functionality & API Communication**: Defensive normalization layer supporting all 11 backend endpoints with offline mock fallbacks.
 - Development was executed across 5 milestones, rigorously challenged by independent Reviewers, Challengers, and Auditors at each gate.

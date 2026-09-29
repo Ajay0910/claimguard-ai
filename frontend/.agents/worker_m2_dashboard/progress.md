@@ -8,7 +8,7 @@
 - [x] Run baseline test suite (61/61 passed) and build (5.01s)
 - [x] Plan component architecture and exact props
 - [x] Enhance MetricCard.jsx (SVG Bezier sparklines, variance pills, target pills, badges, backwards compatibility)
-- [x] Implement DashboardCharts.jsx (StatusDonutChart, FinancialWaterfallChart, RuleViolationBarChart)
+- [x] Implement DashboardCharts.jsx (StatusDonutChart, FinancialWaterfallChart, RuleConflictBarChart)
 - [x] Implement ClaimsTable.jsx (full-text search, status tabs, sortable columns, DocumentStatusPills, en-IN INR, pagination, CSV export, empty states)
 - [x] Implement ExecutiveKpiCards.jsx (4 executive KPI cards with INR ₹ formatting, sparkline curve, variance indicators, contextual status)
 - [x] Overhaul Dashboard.jsx (Skeletons, ErrorState with retry, Priority Alert banner, URL search sync, cross-filtering callback, refresh button)

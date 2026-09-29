@@ -189,7 +189,7 @@ export default function ExecutiveKpiCards({ stats = {}, claims = [], className =
           metaText="Discrepancy: ₹2.14L in dispute"
           sparkline={auditTrend}
           sparklineColor="rose"
-          tooltip="Claims with detected IRDAI clause violations, room rent caps, or pending forensic review."
+          tooltip="Claims with detected IRDAI clause conflicts, room rent caps, or pending forensic review."
         />
       </motion.div>
 

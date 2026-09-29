@@ -142,7 +142,7 @@ Commands executed independently by the reviewer:
 
 ---
 
-## 4. Integrity Violation Assessment
+## 4. Integrity Conflict Assessment
 
 | Integrity Check Item | Result | Evidence |
 |----------------------|--------|----------|
@@ -184,7 +184,7 @@ Milestone 3: Upload Studio & UX Polish successfully fulfills all functional, arc
 - Document Cards offer clinical metadata inspection with interactive Retag, Replace, and Remove actions.
 - The Pre-Analysis Health Check provides clear tripartite validation, a 1-click Apollo benchmark demo, and a 4-stage extraction progress animation.
 - Production build and test suites pass with 100% success.
-- No integrity violations or critical blockers exist.
+- No integrity conflicts or critical blockers exist.
 
 **Final Verdict: APPROVE**
 

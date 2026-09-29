@@ -8,7 +8,7 @@
  * 3. Waterfall chart with extreme values: 0 billed, negative recoverable, disallowed > billed.
  * 4. Sparkline curve generator in MetricCard.jsx: [], [42], [10, 10, 10], negatives, null/undefined/corrupted inputs.
  * 5. Cross-filtering callbacks: click event when onSelectStatusFilter is undefined/null/non-function.
- * 6. Rule violation bar chart and currency helper boundaries.
+ * 6. Rule conflict bar chart and currency helper boundaries.
  */
 
 import { build } from 'vite';

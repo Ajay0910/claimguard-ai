@@ -53,7 +53,7 @@ Direct, empirical observations across all frontend modules, mathematical routine
   - Zero/Extreme Gross Bill: Protected by `safeTotal = billedAmount > 0 ? billedAmount : 1` (line 77).
   - Division by Zero on Recovery Yield: Protected by `insurerPaid > 0 ? ((recoverableAmount / insurerPaid) * 100).toFixed(1) : '0.0'` (lines 83–85).
   - Proportionate Stacked Bar: Percentage distribution clamped strictly to `[0, 100]` with `Math.min(100 - approvedPct, Math.max(0, ...))` (lines 78–80).
-  - Empty Rule Verdicts: Discrepancy section falls back cleanly to default statutory violation cards citing IRDAI Master Circular Cl 12.3 and Insurance Act 1938 § 45 (lines 364–434).
+  - Empty Rule Verdicts: Discrepancy section falls back cleanly to default statutory conflict cards citing IRDAI Master Circular Cl 12.3 and Insurance Act 1938 § 45 (lines 364–434).
 - **`src/components/analysis/VerdictCard.jsx`**:
   - Proportional Bar Calculation: Scaling divisor guarded by `maxVal = Math.max(correctCalc, insurerCalc, 1)` (line 120), ensuring `maxVal >= 1`.
   - Delta Bar Widths: Explicitly bounded between 8% and 100% via `Math.min(100, Math.max(8, ...))` (lines 121–122).
@@ -104,11 +104,11 @@ Direct, empirical observations across all frontend modules, mathematical routine
    - `ORIGINAL_REQUEST.md` demanded an enterprise UI overhaul, advanced clinical data visualizations, and robust UX across Dashboard, Upload, and Analysis pages.
    - The master test suite (`npm test`) executes 72 tests covering all feature specifications across Tiers 1–4. The 100% pass rate confirms compliance with IRDAI Master Circular May 2024, Insurance Act 1938 § 45, room rent capping, mental health parity, and ELA document forensics.
 2. **Mathematical & SVG Robustness**:
-   - Zero, null, negative, and extreme inputs were tested across `StatusDonutChart`, `FinancialWaterfallChart`, `RuleViolationBarChart`, `SparklineCurve`, `ElaTamperGauge`, and `FinancialDelta`.
+   - Zero, null, negative, and extreme inputs were tested across `StatusDonutChart`, `FinancialWaterfallChart`, `RuleConflictBarChart`, `SparklineCurve`, `ElaTamperGauge`, and `FinancialDelta`.
    - All mathematical operations implement defensive checks: `safeTotal = billedAmount > 0 ? billedAmount : 1`, `maxVal = rawMaxVal <= 0 || isNaN(rawMaxVal) ? 1 : rawMaxVal`, and `range = max - min || 1`. Slices and percentages are bounded using `Math.max(0, Math.min(100, ...))`. No `NaN` or `Infinity` artifacts exist in rendered markup.
 3. **Data Resilience & Error Boundaries**:
    - Every UI component accepts `null`, `undefined`, or empty objects as props without throwing `TypeError`.
-   - Fallbacks are standardized: `StatusBadge` defaults to `'Pending'`, `MetricCard` defaults to `'Metric'`, `FinancialDelta` falls back to statutory default violation cards, `AuditTimeline` falls back to sealed mock ledger blocks, and `AppealLetter` falls back to the Apollo grievance letterhead.
+   - Fallbacks are standardized: `StatusBadge` defaults to `'Pending'`, `MetricCard` defaults to `'Metric'`, `FinancialDelta` falls back to statutory default conflict cards, `AuditTimeline` falls back to sealed mock ledger blocks, and `AppealLetter` falls back to the Apollo grievance letterhead.
    - Top-level error boundaries (`ErrorState`) present actionable retry buttons and technical diagnostics drawers.
 4. **Interactive Workflow Integrity**:
    - Upload wizard validates boundaries (0B, 25MB, MIME types) and gates analysis until tripartite completeness.

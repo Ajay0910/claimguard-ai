@@ -15,7 +15,7 @@ import ExecutiveKpiCards from '../src/components/dashboard/ExecutiveKpiCards.jsx
 import DashboardCharts, {
   StatusDonutChart,
   FinancialWaterfallChart,
-  RuleViolationBarChart,
+  RuleConflictBarChart,
   formatInr,
   formatCompactInr,
 } from '../src/components/dashboard/DashboardCharts.jsx';
@@ -339,12 +339,12 @@ export function runComponentTests() {
   // ============================================================
   // 8. Milestone 2: Dashboard Visualizations Stress Tests
   // ============================================================
-  test('DashboardCharts renders StatusDonutChart, FinancialWaterfallChart, and RuleViolationBarChart', () => {
+  test('DashboardCharts renders StatusDonutChart, FinancialWaterfallChart, and RuleConflictBarChart', () => {
     const html = renderToStaticMarkup(<DashboardCharts stats={mockStats} claims={mockClaims} />);
     if (!html.includes('Claim Adjudication Distribution')) throw new Error('Donut chart title missing');
     if (!html.includes('Financial Recovery Waterfall')) throw new Error('Waterfall chart title missing');
-    if (!html.includes('Top Statutory Rule Violations')) throw new Error('Rule violations chart title missing');
-    if (!html.includes('Proportionate Deduction Scaling')) throw new Error('Top rule violation item missing');
+    if (!html.includes('Top Statutory Rule Conflicts')) throw new Error('Rule conflicts chart title missing');
+    if (!html.includes('Proportionate Deduction Scaling')) throw new Error('Top rule conflict item missing');
     if (!html.includes('Insurance Act 1938 Sec 45')) throw new Error('Section 45 moratorium citation missing');
   });
 

@@ -12,3 +12,4 @@ dist/
 data/synthetic_bills/
 data/synthetic_policies/
 data/synthetic_rejections/
+venv/

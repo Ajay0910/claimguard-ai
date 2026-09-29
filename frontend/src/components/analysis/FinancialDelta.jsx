@@ -45,44 +45,21 @@ export default function FinancialDelta({
   onNavigateToRules = () => {},
   className = '',
 }) {
-  // 1. Financial Reconciliations & Normalizations
-  const insurerPaid = Number(
-    result.total_insurer_calculation ??
-    result.approved_amount ??
-    68000
-  );
+  // 1. Financial Reconciliations & Normalizations (Backend Authoritative)
+  const insurerPaid = Number(result?.total_insurer_calculation ?? 0);
+  const recoverableAmount = Number(result?.total_monetary_impact ?? 0);
+  const correctAllowable = Number(result?.total_correct_calculation ?? 0);
+  const billedAmount = Number(result?.billed_amount ?? 0);
 
-  const recoverableAmount = Number(
-    result.total_monetary_impact ??
-    42500
-  );
+  const totalDisallowed = Number(result?.total_disallowed ?? 0);
+  const legitimateDeduction = Number(result?.legitimate_deduction ?? 0);
 
-  const correctAllowable = Number(
-    result.total_correct_calculation ??
-    (insurerPaid + recoverableAmount)
-  );
-
-  // Derive Billed Gross Amount with fallback accounting
-  const billedAmount = Number(
-    claim?.billed_amount ||
-    result.total_claimed ||
-    result.billed_amount ||
-    (claim?.monetary_impact ? insurerPaid + recoverableAmount + 13500 : 124000)
-  );
-
-  const totalDisallowed = Math.max(0, billedAmount - insurerPaid);
-  const legitimateDeduction = Math.max(0, totalDisallowed - recoverableAmount);
-
-  // Calculate Percentage Distribution for Stacked Bar
   const safeTotal = billedAmount > 0 ? billedAmount : 1;
-  const approvedPct = Math.min(100, Math.max(0, (insurerPaid / safeTotal) * 100));
-  const recoverablePct = Math.min(100 - approvedPct, Math.max(0, (recoverableAmount / safeTotal) * 100));
-  const legitimatePct = Math.max(0, 100 - approvedPct - recoverablePct);
+  const approvedPct = Number(result?.approved_pct ?? 0);
+  const recoverablePct = Number(result?.recoverable_pct ?? 0);
+  const legitimatePct = Number(result?.legitimate_pct ?? 0);
 
-  // Recovery Yield: Potential uplift over insurer's initial sanctioned amount
-  const recoveryYield = insurerPaid > 0
-    ? ((recoverableAmount / insurerPaid) * 100).toFixed(1)
-    : '0.0';
+  const recoveryYield = result?.recovery_yield ?? '0.0';
 
   // Hover state for stacked bar segments: 'approved' | 'recoverable' | 'patient' | null
   const [activeSegment, setActiveSegment] = useState(null);
@@ -284,7 +261,7 @@ export default function FinancialDelta({
                 <span className="text-base font-extrabold text-emerald-700 font-financial">{formatInr(recoverableAmount)}</span>
                 <span className="text-xs font-bold text-emerald-800">{recoverablePct.toFixed(1)}%</span>
               </div>
-              <div className="text-[11px] text-emerald-700 mt-0.5">Statutory violations backed by IRDAI Master Circular</div>
+              <div className="text-[11px] text-emerald-700 mt-0.5">Statutory conflicts backed by IRDAI Master Circular</div>
             </div>
 
             {/* Legend Item 3: Conforming Patient Share */}
@@ -318,7 +295,7 @@ export default function FinancialDelta({
             <span>Itemized Statutory Discrepancy Breakdown</span>
           </h3>
           <span className="text-xs text-slate-500 font-medium">
-            {failVerdicts.length > 0 ? failVerdicts.length : 2} actionable violations identified
+            {failVerdicts.length} actionable conflicts identified
           </span>
         </div>
 
@@ -332,7 +309,7 @@ export default function FinancialDelta({
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                      Tier 1 Statutory Violation
+                      Tier 1 Statutory Conflict
                     </span>
                     <span className="text-sm font-extrabold text-rose-600 font-financial">
                       +{formatInr(v.monetary_impact || 0)}
@@ -362,75 +339,13 @@ export default function FinancialDelta({
               </div>
             ))
           ) : (
-            <>
-              {/* Default Fallback Discrepancy Card 1 */}
-              <div className="card-enterprise p-5 border-l-4 border-l-rose-500 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                      Tier 1 Statutory Violation
-                    </span>
-                    <span className="text-sm font-extrabold text-rose-600 font-financial">
-                      +₹32,000.00
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900 mt-2">
-                    Proportionate Deduction Applied to Fixed Medical Charges
-                  </h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Insurer reduced Operation Theatre (₹35,000) and Consultant charges (₹15,000) by 40% due to room category variation. Fixed medical procedure charges cannot be proportionately reduced under statutory guidelines.
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-600 font-medium truncate max-w-[280px]">
-                    <Scale className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-                    <span className="truncate">IRDAI Master Circular May 2024, Cl 12.3</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onNavigateToRules}
-                    className="text-xs font-bold text-brand-600 hover:text-brand-800 flex items-center gap-1 transition-colors flex-shrink-0"
-                  >
-                    Inspect <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Default Fallback Discrepancy Card 2 */}
-              <div className="card-enterprise p-5 border-l-4 border-l-amber-500 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                      Tier 1 Statutory Violation
-                    </span>
-                    <span className="text-sm font-extrabold text-amber-700 font-financial">
-                      +₹10,500.00
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900 mt-2">
-                    Pre-Existing Condition Contestation Beyond Moratorium Window
-                  </h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Insurer disallowed post-operative hypertension stabilization medication citing non-disclosure. The policy has been continuously renewed for 64 months, exceeding the 60-month statutory moratorium bar.
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-600 font-medium truncate max-w-[280px]">
-                    <Scale className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-                    <span className="truncate">Insurance Act 1938 § 45 & Reg 15 (Moratorium)</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onNavigateToRules}
-                    className="text-xs font-bold text-brand-600 hover:text-brand-800 flex items-center gap-1 transition-colors flex-shrink-0"
-                  >
-                    Inspect <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </>
+            <div className="col-span-1 md:col-span-2 card-enterprise p-6 text-center">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-3" />
+              <h4 className="text-sm font-bold text-slate-900">No Statutory Conflicts Detected</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                The settlement complies with IRDAI guidelines and policy conditions.
+              </p>
+            </div>
           )}
         </div>
       </div>

@@ -10,10 +10,10 @@ import math
 from pydantic import BaseModel, Field
 
 
-from ..schemas.forensics_result import FactorAttribution, CompositeFraudScore
+from ..schemas.forensics_result import FactorAttribution, AnomalyAssessment
 
 
-class ExplainableFraudScorer:
+class AnomalyScorer:
     """
     Computes a calibrated composite fraud risk score (0.0 - 100.0%) from multi-modal
     forensics, billing anomalies, clinical consistency, and metadata checks.
@@ -36,7 +36,7 @@ class ExplainableFraudScorer:
         clinical_consistency: Optional[Union[Dict[str, Any], List[Any]]] = None,
         metadata_flags: Optional[List[Any]] = None,
         provider_data: Optional[Dict[str, Any]] = None,
-    ) -> CompositeFraudScore:
+    ) -> AnomalyAssessment:
         """
         Evaluate all inputs and compute calibrated composite score with additive feature attributions.
         """
@@ -78,6 +78,11 @@ class ExplainableFraudScorer:
         b_score_clean = _clean_comp(b_score)
         c_score_clean = _clean_comp(c_score)
         p_score_clean = _clean_comp(p_score)
+        
+        # Point 2: A financial discrepancy must not automatically trigger fraud alerts.
+        if f_score_clean < 0.15 and m_score_clean < 0.15:
+            b_score_clean = min(b_score_clean, 0.25)
+            c_score_clean = min(c_score_clean, 0.25)
 
         # Weighted sum of category contributions:
         raw_composite = (
@@ -96,13 +101,13 @@ class ExplainableFraudScorer:
 
         # Calibrate risk tier
         if overall_score < 25.0:
-            risk_tier = "LOW"
+            review_status = "CLEAN"
         elif overall_score < 50.0:
-            risk_tier = "MEDIUM"
+            review_status = "NEEDS_REVIEW"
         elif overall_score < 75.0:
-            risk_tier = "HIGH"
+            review_status = "FLAGGED FOR REVIEW"
         else:
-            risk_tier = "CRITICAL"
+            review_status = "FLAGGED FOR REVIEW"
 
         # Calculate confidence metric based on signal availability
         confidence = self._calculate_confidence(
@@ -114,21 +119,21 @@ class ExplainableFraudScorer:
             fa for fa in attributions if fa.impact_score > 0.05
         ]
         active_drivers.sort(key=lambda x: x.impact_score * x.weight, reverse=True)
-        top_risk_drivers = [
+        top_anomalies = [
             f"{fa.factor_name}: {fa.description}" for fa in active_drivers[:5]
         ]
 
         # Generate interpretability summary narrative
         summary = self._generate_summary(
-            overall_score, risk_tier, confidence, active_drivers
+            overall_score, review_status, confidence, active_drivers
         )
 
-        return CompositeFraudScore(
-            overall_fraud_score=overall_score,
-            risk_tier=risk_tier,
+        return AnomalyAssessment(
+            anomaly_density_score=overall_score,
+            review_status=review_status,
             confidence=confidence,
             factor_attributions=attributions,
-            top_risk_drivers=top_risk_drivers,
+            top_anomalies=top_anomalies,
             summary=summary,
         )
 
@@ -191,7 +196,7 @@ class ExplainableFraudScorer:
         ) or "CLEAN"
 
         ela_impact = min(1.0, max(-0.2, (ela_score - 0.15) * 1.5))
-        if ela_assessment == "HIGHLY_SUSPICIOUS":
+        if ela_assessment == "FLAGGED FOR REVIEWLY_SUSPICIOUS":
             ela_impact = max(ela_impact, 0.85)
         elif ela_assessment == "SUSPICIOUS":
             ela_impact = max(ela_impact, 0.50)
@@ -294,7 +299,7 @@ class ExplainableFraudScorer:
 
         for flag in metadata_flags:
             sev = getattr(flag, "severity", None) or (
-                flag.get("severity") if isinstance(flag, dict) else "LOW"
+                flag.get("severity") if isinstance(flag, dict) else "CLEAN"
             )
             desc = getattr(flag, "description", None) or (
                 flag.get("description") if isinstance(flag, dict) else str(flag)
@@ -568,15 +573,15 @@ class ExplainableFraudScorer:
         confidence: float,
         active_drivers: List[FactorAttribution],
     ) -> str:
-        if tier == "LOW":
+        if tier == "CLEAN":
             return (
-                f"Composite fraud risk is LOW ({score:.1f}%). "
+                f"Composite anomaly density is CLEAN ({score:.1f}%). "
                 f"Document forensic checks, CGHS tariff alignment, and clinical protocol verifications "
                 f"show high integrity and compliance (confidence: {int(confidence*100)}%)."
             )
 
         drivers_summary = "; ".join([d.description for d in active_drivers[:3]])
         return (
-            f"Composite fraud risk evaluated at {tier} ({score:.1f}%, confidence: {int(confidence*100)}%). "
+            f"Composite anomaly density evaluated at {tier} ({score:.1f}%, confidence: {int(confidence*100)}%). "
             f"Primary risk drivers: {drivers_summary}."
         )

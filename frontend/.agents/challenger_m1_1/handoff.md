@@ -75,12 +75,12 @@ node --loader ./tests/esm-loader.mjs ./tests/challenger-m1-stress.mjs
    TypeError: Cannot read properties of null (reading 'id')
    ```
 
-4. **Bug 4 [MEDIUM] — `normalizeAnalysisResult` Overwrites Legitimate Clean Claims (`rule_verdicts: []`) With 4 Mock Violations:**
+4. **Bug 4 [MEDIUM] — `normalizeAnalysisResult` Overwrites Legitimate Clean Claims (`rule_verdicts: []`) With 4 Mock Conflicts:**
    - *File & Line:* `src/services/api.js:77`
    ```javascript
    77: rule_verdicts: core.rule_verdicts && core.rule_verdicts.length > 0 ? core.rule_verdicts : mockAnalysisResult.rule_verdicts,
    ```
-   - *Observation:* When an actual claim is analyzed by the backend and found to have 0 rule violations (`rule_verdicts: []`), `core.rule_verdicts.length > 0` evaluates to `false`. The normalizer **discards the valid clean array** and forces `mockAnalysisResult.rule_verdicts` onto the claim. As a result, a 100% compliant claim will falsely display 2 statutory FAIL violations and ₹42,500 in unauthorized penalties.
+   - *Observation:* When an actual claim is analyzed by the backend and found to have 0 rule conflicts (`rule_verdicts: []`), `core.rule_verdicts.length > 0` evaluates to `false`. The normalizer **discards the valid clean array** and forces `mockAnalysisResult.rule_verdicts` onto the claim. As a result, a 100% compliant claim will falsely display 2 statutory FAIL conflicts and ₹42,500 in unauthorized penalties.
 
 5. **Bug 5 [LOW] — In-Memory Shared Mutation Leakage in `mockData.js`:**
    - *File & Line:* `src/services/api.js:67`
@@ -110,7 +110,7 @@ node --loader ./tests/esm-loader.mjs ./tests/challenger-m1-stress.mjs
 
 3. **Data Corruption on Compliant Claims:**
    - Observation: Line 77 of `src/services/api.js` explicitly checks `core.rule_verdicts.length > 0`.
-   - Deduction: When a claim is compliant (empty array of rule violations), the normalizer replaces it with `mockAnalysisResult.rule_verdicts`. This directly invalidates the core purpose of Milestone 4 / Analysis Hub by inventing false fraud on clean claims.
+   - Deduction: When a claim is compliant (empty array of rule conflicts), the normalizer replaces it with `mockAnalysisResult.rule_verdicts`. This directly invalidates the core purpose of Milestone 4 / Analysis Hub by inventing false fraud on clean claims.
 
 4. **Offline Contract Non-Conformance:**
    - Observation: `Analysis.jsx` reads `appealDraft.content`. When offline, `normalizeAppealDraft(null)` returns `mockAppealDraft`, which lacks `content`.
@@ -173,8 +173,8 @@ node --loader ./tests/esm-loader.mjs ./tests/challenger-m1-stress.mjs
 
 #### [MEDIUM] Challenge 3: Clean Claims Display False Penalties
 - **Assumption challenged:** Only invalid or unanalyzed claims have `rule_verdicts.length === 0`.
-- **Attack scenario:** Backend finishes audit of a clean claim with 0 rule violations (`rule_verdicts: []`).
-- **Blast radius:** Clean claim is forcefully stamped with 4 mock violations and ₹42,500 in false penalties.
+- **Attack scenario:** Backend finishes audit of a clean claim with 0 rule conflicts (`rule_verdicts: []`).
+- **Blast radius:** Clean claim is forcefully stamped with 4 mock conflicts and ₹42,500 in false penalties.
 - **Mitigation:**
   ```javascript
   // src/services/api.js:77
@@ -225,7 +225,7 @@ node --loader ./tests/esm-loader.mjs ./tests/challenger-m1-stress.mjs
 Milestone 1 is structurally sound in its visual styling and TypeScript definitions, but contains **critical normalizer bugs** and a **decoupled test suite** that mask regressions:
 1. `normalizeStats(null)` crashes on null.
 2. `normalizeAppealDraft(null)` omits `content`.
-3. `normalizeAnalysisResult` corrupts clean audits by replacing `rule_verdicts: []` with mock violations.
+3. `normalizeAnalysisResult` corrupts clean audits by replacing `rule_verdicts: []` with mock conflicts.
 4. `src/services/api.js` has an extensionless import preventing direct ESM execution in Node.js.
 5. Existing `npm test` tests stubs in `test-framework.mjs` instead of `api.js`.
 

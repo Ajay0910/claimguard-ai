@@ -68,7 +68,7 @@ The following 14 files were inspected directly for code quality, correctness, an
    - 341 lines of unified TypeScript interfaces accurately modeling backend Pydantic schemas: `Claim`, `HospitalBill`, `InsurancePolicy`, `RejectionLetter`, `RuleVerdict`, `AnalysisResult`, `ForensicsResult` (`ELAResult`, `MetadataFlag`, `BillAnomalyFlag`, `ConsistencyFlag`), `AuditLogEntry`, `AuditTrailResponse`, `AppealDraftResponse`, `DashboardStats`.
 
 5. **`src/services/mockData.js:1-372`**:
-   - Conforms strictly to `src/types/index.ts`. Provides `mockAuditor` (Dr. Aditi Sharma, CPC), `mockTenant` (St. Jude Multi-Specialty Hospital), `mockStats` (128 claims, 14 pending, ₹14,28,500 recovered), 8 diverse `mockClaims` (with various statuses: COMPLETED, ANALYZING, PENDING, FAILED), `mockAnalysisResult` (with IRDAI May 2024 proportionate deduction violation and Sec 45 moratorium protection), `mockAppealDraft` (statutory grievance letterhead text), and `mockAuditTrail` (chronological SHA-256 block ledger).
+   - Conforms strictly to `src/types/index.ts`. Provides `mockAuditor` (Dr. Aditi Sharma, CPC), `mockTenant` (St. Jude Multi-Specialty Hospital), `mockStats` (128 claims, 14 pending, ₹14,28,500 recovered), 8 diverse `mockClaims` (with various statuses: COMPLETED, ANALYZING, PENDING, FAILED), `mockAnalysisResult` (with IRDAI May 2024 proportionate deduction conflict and Sec 45 moratorium protection), `mockAppealDraft` (statutory grievance letterhead text), and `mockAuditTrail` (chronological SHA-256 block ledger).
 
 6. **`src/services/api.js:19-216`**:
    - Normalizers implemented:
@@ -129,7 +129,7 @@ The following 14 files were inspected directly for code quality, correctness, an
    - *Deduction:* Existing views referencing old component paths remain functional while benefiting from updated enterprise styling.
 
 5. **Conclusion:**
-   - *Assessment:* Milestone 1 deliverables fulfill all requirements of `PROJECT.md` and `ORIGINAL_REQUEST.md` without integrity violations or defects.
+   - *Assessment:* Milestone 1 deliverables fulfill all requirements of `PROJECT.md` and `ORIGINAL_REQUEST.md` without integrity conflicts or defects.
 
 ---
 
@@ -159,7 +159,7 @@ Milestone 1 (Foundations, Design System, Shared Components & App Shell) is **app
 - Comprehensive TypeScript contracts matching backend schemas are established.
 - Resilient API client properly normalizes backend responses and provides offline fallback.
 - Shared component library (`Topbar`, `StatusBadge`, `MetricCard`, `Skeletons`, `ErrorState`) is high-quality, fully responsive, and production-grade.
-- Zero integrity violations, zero facade implementations, and 100% test pass rate.
+- Zero integrity conflicts, zero facade implementations, and 100% test pass rate.
 - Codebase is clean and ready for Milestone 2 (Enterprise Dashboard & Visualizations).
 
 ---

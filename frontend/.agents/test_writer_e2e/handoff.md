@@ -31,7 +31,7 @@
   - `tests/test-framework.mjs`: Lightweight, zero-dependency Node ESM test framework providing assertions (`toBe`, `toEqual`, `toBeCloseTo`, `toBeGreaterThan`, `toContain`, `toMatch`, `toThrow`), test context grouping, and statutory calculation helpers (IRDAI May 2024 proportionate deduction, 60-month moratorium timeline, ELA tamper scoring, CGHS tariffs, SHA-256 chain verification).
   - `tests/tier1-feature-coverage.test.mjs`: 24 specs covering all 16 features, API contracts, normalization adapters, status badge semantics, INR formatting, and stepper progression.
   - `tests/tier2-boundary-cases.test.mjs`: 23 specs probing 25MB file boundaries, MIME whitelisting, multi-crore values, room rent factor boundaries, 36m vs 60m timelines, ELA score tiers, and ₹10 bill itemization tolerance.
-  - `tests/tier3-combinations.test.mjs`: 9 specs validating multi-document intake combinations, concurrent multi-rule violations, compound fraud tampering vectors, clinical contradictions, and cryptographic SHA-256 hash chains.
+  - `tests/tier3-combinations.test.mjs`: 9 specs validating multi-document intake combinations, concurrent multi-rule conflicts, compound fraud tampering vectors, clinical contradictions, and cryptographic SHA-256 hash chains.
   - `tests/tier4-real-world-scenarios.test.mjs`: 5 specs simulating full end-to-end user journeys (Apollo Hospital bill with ₹41,000 recoverable underpayment, digital tampering forensics lab alert, clean approved claim, 62-month moratorium protection, and network polling resilience).
   - `tests/runner.mjs`: Master CLI runner with ANSI reporting, tier filtering (`--tier=N`), summary table generation, and process exit code signaling.
 - **`package.json` Configuration**:

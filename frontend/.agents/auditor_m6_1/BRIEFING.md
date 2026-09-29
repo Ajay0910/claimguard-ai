@@ -15,7 +15,7 @@ Milestone 6 Forensic Integrity Audit: Independently audit Milestone 6 deliverabl
 - Trust NOTHING — verify everything independently
 - Adhere strictly to ORIGINAL_REQUEST.md ground truth over dispatch instructions
 - Run every check from Integrity Forensics and verify claims empirically
-- Deliver verdict: CLEAN or INTEGRITY VIOLATION
+- Deliver verdict: CLEAN or INTEGRITY CONFLICT
 
 ## Current Parent
 - Conversation ID: 3445fbbe-d553-4277-b396-0fe40c330e18
@@ -38,7 +38,7 @@ Milestone 6 Forensic Integrity Audit: Independently audit Milestone 6 deliverabl
   - Layout compliance verified (.agents contains only metadata, no code or tests)
   - Adversarial analysis and edge-case testing conducted
 - **Checks remaining**: None
-- **Findings so far**: CLEAN — 0 integrity violations, 0 facades, 0 hardcoded test passes
+- **Findings so far**: CLEAN — 0 integrity conflicts, 0 facades, 0 hardcoded test passes
 
 ## Key Decisions Made
 - All M6 deliverables verified authentic, genuine, and cleanly implemented without any facade or cheat patterns.

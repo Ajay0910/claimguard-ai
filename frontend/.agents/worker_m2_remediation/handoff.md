@@ -42,8 +42,8 @@ Direct code analysis and empirical inspection of the pre-remediation vulnerabili
 2. **Defect 2 (StatusDonutChart 100% Single Category Gap Artifact):**
    - *Pre-remediation (lines 160–163)*: Evaluated `dynamicBreakdown.length > 1` (always 4) rather than non-zero slices, creating an unintended 2.5px gap notch on single-category donuts.
    - *Post-remediation (lines 160–165)*: Computed `activeCategoriesCount = dynamicBreakdown.filter((item) => item.count > 0).length;` and set `gapPadding = activeCategoriesCount > 1 && item.count > 0 ? 2.5 : 0;`. When 100% of claims are in one category, gap is 0, rendering a continuous 360° ring.
-3. **Defect 3 (RuleViolationBarChart Divide-by-Zero):**
-   - *Pre-remediation (lines 467, 520)*: If all rule violations had 0 count and impact, `maxVal = 0`, producing `style="width: NaN%"`.
+3. **Defect 3 (RuleConflictBarChart Divide-by-Zero):**
+   - *Pre-remediation (lines 467, 520)*: If all rule conflicts had 0 count and impact, `maxVal = 0`, producing `style="width: NaN%"`.
    - *Post-remediation (lines 474–475, 526–528)*: Defined `const maxVal = rawMax <= 0 || isNaN(rawMax) ? 1 : rawMax;` and clamped `percentage = Math.min(100, Math.max(0, (safeMetric / maxVal) * 100)).toFixed(0);`.
 4. **Defect 4 (Cross-Filtering Callback Guard):**
    - *Pre-remediation (lines 178–182)*: `if (onSelectStatusFilter)` checked truthiness.

@@ -314,7 +314,7 @@ async function runAdversarialSuite() {
         claim_id: 'CLM-CLEAN-ZERO',
         overall_status: 'NO_MISMATCH_FOUND',
         total_monetary_impact: 0,
-        rule_verdicts: [], // Clean claim has 0 rule violations!
+        rule_verdicts: [], // Clean claim has 0 rule conflicts!
       }
     };
     const res = normalizeAnalysisResult(emptyVerdictsPayload, 'CLM-CLEAN-ZERO');

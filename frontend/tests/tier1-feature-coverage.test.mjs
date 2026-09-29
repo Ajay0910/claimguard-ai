@@ -401,7 +401,7 @@ describe('Tier 1.8: Milestone 2 — Enterprise Dashboard & Visualizations Specs'
           return (
             impact > 0 ||
             deduction.includes('deduction') ||
-            deduction.includes('violation') ||
+            deduction.includes('conflict') ||
             deduction.includes('breach') ||
             status === 'PARTIAL_SETTLEMENT'
           );

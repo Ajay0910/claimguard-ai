@@ -5,7 +5,7 @@ from .metadata_checker import MetadataChecker
 from .bill_anomaly import BillAnomalyDetector
 from .consistency_checker import ConsistencyChecker
 from .pdf_inspector import PDFInspector, PDFInspectionResult
-from .fraud_scorer import ExplainableFraudScorer, CompositeFraudScore
+from .fraud_scorer import AnomalyScorer, AnomalyAssessment
 from ..schemas.hospital_bill import HospitalBill
 from ..schemas.forensics_result import ForensicsResult, ELAResult
 
@@ -16,7 +16,7 @@ class ForensicsEngine:
         self.bill_anomaly_detector = BillAnomalyDetector()
         self.consistency_checker = ConsistencyChecker()
         self.pdf_inspector = PDFInspector()
-        self.fraud_scorer = ExplainableFraudScorer()
+        self.fraud_scorer = AnomalyScorer()
     
     def run_all_checks(self, file_path: str, bill: Optional[HospitalBill] = None) -> ForensicsResult:
         """
@@ -73,7 +73,7 @@ class ForensicsEngine:
             overall_risk = "MEDIUM"
             
         # Compute calibrated explainable composite fraud score
-        composite_fraud_score = self.fraud_scorer.compute_score(
+        anomaly_assessment = self.fraud_scorer.compute_score(
             forensics_result={
                 "ela_result": ela_result.model_dump() if hasattr(ela_result, "model_dump") else (ela_result.dict() if hasattr(ela_result, "dict") else ela_result),
                 "pdf_inspection_result": pdf_inspection_result.model_dump() if (pdf_inspection_result and hasattr(pdf_inspection_result, "model_dump")) else (pdf_inspection_result.dict() if (pdf_inspection_result and hasattr(pdf_inspection_result, "dict")) else pdf_inspection_result),
@@ -83,9 +83,9 @@ class ForensicsEngine:
             metadata_flags=metadata_flags,
         )
 
-        if composite_fraud_score.risk_tier in ["CRITICAL", "HIGH"]:
+        if anomaly_assessment.review_status in ["CRITICAL", "HIGH"]:
             overall_risk = "HIGH"
-        elif composite_fraud_score.risk_tier == "MEDIUM" and overall_risk == "LOW":
+        elif anomaly_assessment.review_status == "MEDIUM" and overall_risk == "LOW":
             overall_risk = "MEDIUM"
 
         if overall_risk == "HIGH":
@@ -95,13 +95,16 @@ class ForensicsEngine:
         else:
             recommendation = "Appears standard. No major forensic anomalies detected."
             
+        from ..rules import get_val
+        claim_id_val = get_val(bill, 'bill_id', 'unknown_claim') if bill else 'unknown_claim'
+        
         return ForensicsResult(
-            claim_id=bill.bill_id if bill and hasattr(bill, 'bill_id') and bill.bill_id else "unknown_claim",
+            claim_id=claim_id_val,
             overall_risk=overall_risk,
             recommendation=recommendation,
             ela_result=ela_result,
             pdf_inspection_result=pdf_inspection_result,
-            composite_fraud_score=composite_fraud_score,
+            anomaly_assessment=anomaly_assessment,
             metadata_flags=metadata_flags,
             bill_anomalies=bill_flags,
             bill_anomaly_flags=bill_flags,

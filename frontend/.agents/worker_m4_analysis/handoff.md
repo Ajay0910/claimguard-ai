@@ -23,7 +23,7 @@ Direct inspections of modified files and lines:
   * Proportional visual delta bar comparing Insurer Calculated Settlement (strikethrough in rose) vs Statutory Correct Allowable Amount (emerald), with recovery delta callout.
   * 1-click IRDAI statutory clause copy button with clipboard copy (`navigator.clipboard.writeText`), 2.5-second `Copied!` visual transition, and toast notification.
   * Severity badges (`FAIL / MISMATCH`, `REVIEW`, `PASS`, `SKIPPED`), AI confidence meter (e.g. `96%`), and collapsible detail drawer with calculation delta and appeal recommendation.
-  * Exports helper component `VerdictsFilterTabs` supporting filter categories: `All Rules`, `Tier 1 Statutory`, `Tier 2 Policy`, and `Violations Only`.
+  * Exports helper component `VerdictsFilterTabs` supporting filter categories: `All Rules`, `Tier 1 Statutory`, `Tier 2 Policy`, and `Conflicts Only`.
 - `src/components/analysis/ForensicsLab.jsx` (Lines 1–921):
   Created from scratch. Implements Feature 14:
   * Pure SVG 240-degree circular ELA tamper gauge (radius 80, sweep from 150° to 390°, needle angle -120° to +120°), multi-colored gradient track, dynamic tick marks, center score readout (`8.4 / 100`), and assessment risk pill (`CLEAN`).
@@ -164,7 +164,7 @@ To independently verify this implementation:
 5. **Interactive UI Verification**:
    - Navigate to `/analysis/CLM-84920`
    - Test clicking each tab (`Financial`, `Forensics`, `Audit`, `Appeal`) and verify URL updates to `?tab=...`.
-   - On Tab 1: Click "Copy Citation" on any verdict card and verify "Citation Copied!" notification. Click filter tabs (Tier 1, Tier 2, Violations Only).
+   - On Tab 1: Click "Copy Citation" on any verdict card and verify "Citation Copied!" notification. Click filter tabs (Tier 1, Tier 2, Conflicts Only).
    - On Tab 2: Toggle "Forensic Heatmap" and "Blend Overlay", drag opacity slider, switch city schedule (Bengaluru, Delhi-NCR, Mumbai).
    - On Tab 3: Click "Verify Hash Chain" and observe verification toast. Click copy button on SHA-256 block hashes.
    - On Tab 4: Click "Edit Draft", verify character counter updates, click "Print / PDF" and "Copy Text".

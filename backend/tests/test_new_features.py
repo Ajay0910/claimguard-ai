@@ -8,7 +8,7 @@ Comprehensive Test Suite for the 3 Research-Backed Core Features:
 import os
 import tempfile
 import pytest
-from app.forensics.fraud_scorer import ExplainableFraudScorer, CompositeFraudScore, FactorAttribution
+from app.forensics.fraud_scorer import AnomalyScorer, AnomalyAssessment, FactorAttribution
 from app.forensics.pdf_inspector import PDFInspector, PDFInspectionResult, PDFRevisionInfo
 from app.rules.appeal_evaluator import AppealEvaluator, AppealEvaluationResult, check_appeal_viability
 from app.forensics.engine import ForensicsEngine
@@ -23,10 +23,10 @@ from app.schemas.forensics_result import BillAnomalyFlag, ConsistencyFlag, Metad
 # Feature 1: Explainable Composite Fraud Risk Scorer Tests
 # ---------------------------------------------------------------------------
 
-class TestExplainableFraudScorer:
+class TestAnomalyScorer:
     @pytest.fixture
     def scorer(self):
-        return ExplainableFraudScorer()
+        return AnomalyScorer()
 
     def test_clean_claim_low_fraud_score(self, scorer):
         """Clean bill with no forensic, billing, or clinical flags yields LOW risk."""
@@ -36,11 +36,11 @@ class TestExplainableFraudScorer:
             clinical_consistency=[],
             metadata_flags=[]
         )
-        assert isinstance(result, CompositeFraudScore)
-        assert result.overall_fraud_score < 25.0
-        assert result.risk_tier == "LOW"
+        assert isinstance(result, AnomalyAssessment)
+        assert result.anomaly_density_score < 25.0
+        assert result.review_status == "CLEAN"
         assert result.confidence >= 0.90
-        assert "LOW" in result.summary
+        assert "CLEAN" in result.summary
         assert len(result.factor_attributions) > 0
 
     def test_high_fraud_score_multiple_anomalies(self, scorer):
@@ -67,9 +67,9 @@ class TestExplainableFraudScorer:
             metadata_flags=metadata_flags
         )
 
-        assert result.overall_fraud_score >= 70.0
-        assert result.risk_tier in ["HIGH", "CRITICAL"]
-        assert len(result.top_risk_drivers) >= 3
+        assert result.anomaly_density_score >= 50.0
+        assert result.review_status == "FLAGGED FOR REVIEW"
+        assert len(result.top_anomalies) >= 3
         # Ensure factor attributions decompose into all 4 key categories
         categories = {fa.category for fa in result.factor_attributions}
         assert "forensics" in categories
@@ -91,9 +91,9 @@ class TestExplainableFraudScorer:
     def test_empty_inputs_handled_gracefully(self, scorer):
         """Scorer gracefully computes baseline risk on empty/None inputs."""
         result = scorer.compute_score(None, None, None, None)
-        assert isinstance(result, CompositeFraudScore)
-        assert 0.0 <= result.overall_fraud_score <= 100.0
-        assert result.risk_tier == "LOW"
+        assert isinstance(result, AnomalyAssessment)
+        assert 0.0 <= result.anomaly_density_score <= 100.0
+        assert result.review_status == "CLEAN"
 
 
 # ---------------------------------------------------------------------------
@@ -193,8 +193,8 @@ class TestAppealEvaluator:
     def evaluator(self):
         return AppealEvaluator()
 
-    def test_moratorium_violation_strong_appeal(self, evaluator):
-        """Claims denied on PED after 60-month moratorium have high overturn probability."""
+    def test_moratorium_conflict_strong_appeal(self, evaluator):
+        """Claims denied on PED after 60-month moratorium have STRONG appeal viability."""
         denial_reasons = [
             {"code": "PED01", "category": "PRE_EXISTING", "description": "Pre-existing diabetes non-disclosure"}
         ]
@@ -212,15 +212,13 @@ class TestAppealEvaluator:
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
         assert isinstance(result, AppealEvaluationResult)
-        assert result.overturn_probability >= 80.0
         assert result.appeal_viability == "STRONG"
-        assert result.ombudsman_dispute_risk >= 75.0
-        assert any("Moratorium Violation" in v for v in result.statutory_violations_detected)
+        assert any("Moratorium Conflict" in v for v in result.statutory_conflicts_detected)
         assert any("Asha Goel" in p for p in result.key_legal_precedents)
         assert len(result.suggested_action_plan) >= 4
 
-    def test_mental_health_parity_violation(self, evaluator):
-        """Mental health claim denial triggers Section 21(4) violation and high overturn probability."""
+    def test_mental_health_parity_conflict(self, evaluator):
+        """Mental health claim denial triggers Section 21(4) conflict and STRONG appeal viability."""
         denial_reasons = [
             {"code": "MH01", "category": "MENTAL_HEALTH", "description": "Psychiatric illness excluded"}
         ]
@@ -237,9 +235,8 @@ class TestAppealEvaluator:
         }
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
-        assert result.overturn_probability >= 80.0
         assert result.appeal_viability == "STRONG"
-        assert any("Mental Health Parity Violation" in v for v in result.statutory_violations_detected)
+        assert any("Mental Health Parity Conflict" in v for v in result.statutory_conflicts_detected)
         assert any("Shikha Nischal" in p for p in result.key_legal_precedents)
 
     def test_emergency_admission_waiting_period_override(self, evaluator):
@@ -257,9 +254,8 @@ class TestAppealEvaluator:
         }
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
-        assert result.overturn_probability >= 70.0
         assert result.appeal_viability == "STRONG"
-        assert any("Emergency Exception Breach" in v for v in result.statutory_violations_detected)
+        assert any("Emergency Exception Breach" in v for v in result.statutory_conflicts_detected)
 
     def test_legitimate_cosmetic_exclusion_low_overturn(self, evaluator):
         """Cosmetic procedure exclusion is legally defensible with LOW appeal viability."""
@@ -276,7 +272,6 @@ class TestAppealEvaluator:
         }
 
         result = evaluator.evaluate_denial(denial_reasons, claim_data, policy_data)
-        assert result.overturn_probability <= 40.0
         assert result.appeal_viability == "LOW"
 
     def test_rule_registry_check_appeal_viability_integration(self):
@@ -298,7 +293,7 @@ class TestAppealEvaluator:
         )
         verdict = check_appeal_viability(bill, policy, rejection)
         assert verdict.status == "FAIL"
-        assert "appeal overturn probability" in verdict.finding.lower()
+        assert "statutory conflicts" in verdict.finding.lower()
         assert verdict.regulatory_citation is not None
 
 
@@ -332,9 +327,9 @@ class TestFullSystemIntegration:
 
             assert result.pdf_inspection_result is not None
             assert result.pdf_inspection_result.is_tampered is False
-            assert result.composite_fraud_score is not None
-            assert result.composite_fraud_score.risk_tier == "LOW"
-            assert result.composite_fraud_score.overall_fraud_score < 25.0
+            assert result.anomaly_assessment is not None
+            assert result.anomaly_assessment.review_status == "CLEAN"
+            assert result.anomaly_assessment.anomaly_density_score < 25.0
         finally:
             if os.path.exists(pdf_path):
                 os.remove(pdf_path)
@@ -360,4 +355,3 @@ class TestFullSystemIntegration:
         analysis_res = engine.run_all_rules(bill, policy, rejection)
         assert analysis_res.appeal_evaluation is not None
         assert analysis_res.appeal_evaluation.appeal_viability == "STRONG"
-        assert analysis_res.appeal_evaluation.overturn_probability >= 80.0

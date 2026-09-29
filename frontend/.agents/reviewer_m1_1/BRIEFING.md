@@ -14,8 +14,8 @@ Review Milestone 1 code changes (Foundations, Design System, Shared Components &
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
 - Run build and test to verify independently
-- Check for integrity violations: hardcoded results, facade implementations, shortcuts, fabricated verification
-- If integrity violation detected, issue REQUEST_CHANGES with Critical finding tagged as INTEGRITY VIOLATION
+- Check for integrity conflicts: hardcoded results, facade implementations, shortcuts, fabricated verification
+- If integrity conflict detected, issue REQUEST_CHANGES with Critical finding tagged as INTEGRITY CONFLICT
 
 ## Current Parent
 - Conversation ID: d24af32c-03a0-4eee-9533-77c1f5ac6edc
@@ -28,7 +28,7 @@ Review Milestone 1 code changes (Foundations, Design System, Shared Components &
 
 ## Review Checklist
 - **Items reviewed**: `tailwind.config.js`, `src/index.css`, `index.html`, `src/types/index.ts`, `src/services/mockData.js`, `src/services/api.js`, `src/components/common/*` (StatusBadge, MetricCard, Skeletons, ErrorState, Topbar), `src/components/StatusBadge.jsx`, `src/components/StatsCard.jsx`, `src/App.jsx`, `tests/*`
-- **Verdict**: APPROVE (Milestone 1 foundations complete, build clean, 61/61 tests pass, no integrity violations)
+- **Verdict**: APPROVE (Milestone 1 foundations complete, build clean, 61/61 tests pass, no integrity conflicts)
 - **Unverified claims**: None. All worker claims verified independently via inspection, `npm run build`, and `npm test`.
 
 ## Attack Surface
@@ -37,14 +37,14 @@ Review Milestone 1 code changes (Foundations, Design System, Shared Components &
   - Empty array fallback behavior: Identified `rule_verdicts` and `rawClaims` fallback to mock data when array length is 0.
   - Extensionless ESM imports: Identified Node.js ESM vs Vite resolution difference.
   - Component prop contracts & backward compatibility: Inspected wrappers and old call sites in `Dashboard.jsx`, `Upload.jsx`, `Analysis.jsx`.
-- **Vulnerabilities found**: No blocking defects or integrity violations. 3 minor architectural recommendations for Milestones 2 & 4.
+- **Vulnerabilities found**: No blocking defects or integrity conflicts. 3 minor architectural recommendations for Milestones 2 & 4.
 - **Untested angles**: Live FastAPI WebSocket/backend streaming (tested via mock fallbacks and offline contracts).
 
 ## Key Decisions Made
 - Initiated review of Milestone 1 foundations
 - Executed independent `npm test` (61/61 passed) and `npm run build` (1704 modules, exit code 0)
 - Verified all design tokens, TypeScript types, normalizers, and shell components
-- Confirmed zero integrity violations (no cheating, no facades, no hardcoded test shortcuts)
+- Confirmed zero integrity conflicts (no cheating, no facades, no hardcoded test shortcuts)
 - Approved Milestone 1 for transition to Milestone 2
 
 ## Artifact Index

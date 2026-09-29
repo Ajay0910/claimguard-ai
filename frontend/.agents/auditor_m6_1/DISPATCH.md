@@ -18,4 +18,4 @@ Conduct forensic integrity checks on all changes made in Milestone 6:
 - Verify genuine implementation of `formatDateSafe`, `sanitizeCsvCell`, `autoTagDocument`, `validateUploadFile`, and `cn`.
 - Verify genuine package installation in `package.json` and real tokens in `tailwind.config.js`.
 - Confirm zero cheating, zero facades, and genuine production logic.
-Deliver your verdict: CLEAN or INTEGRITY VIOLATION in handoff.md and send_message.
+Deliver your verdict: CLEAN or INTEGRITY CONFLICT in handoff.md and send_message.

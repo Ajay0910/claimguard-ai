@@ -285,7 +285,7 @@ export default function AppealLetter({
               <div className="p-3.5 bg-slate-50 rounded border border-slate-200 space-y-1.5">
                 <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-mono flex items-center justify-center">1</span>
-                  VIOLATION OF IRDAI MASTER CIRCULAR ON PROPORTIONATE DEDUCTION (Ref: IRDAI/HLT/REG/CIR/084/05/2024)
+                  CONFLICT OF IRDAI MASTER CIRCULAR ON PROPORTIONATE DEDUCTION (Ref: IRDAI/HLT/REG/CIR/084/05/2024)
                 </div>
                 <p className="text-xs text-slate-700 pl-6 leading-relaxed">
                   Under Clause 12.3 of the Master Circular on Operations and Allied Matters (May 2024), proportionate deductions on room category variation are restricted strictly to room-rent-linked charges. The insurer has unlawfully applied a 40% deduction to Operation Theatre charges (₹35,000) and Consultant fees (₹15,000), withholding <strong>₹32,000.00</strong> in direct contravention of binding IRDAI directives.

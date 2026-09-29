@@ -145,6 +145,11 @@ async def portal_submit(
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(content)
 
+        from ..utils.file_handler import compute_sha256_bytes
+        from ..utils.audit_trail import AuditTrail
+
+        doc_hash = compute_sha256_bytes(content)
+
         doc = Document(
             id=file_id,
             claim_id=claim_id,
@@ -154,8 +159,17 @@ async def portal_submit(
             file_path=file_path,
             content_type=upload_file.content_type,
             file_size_bytes=len(content),
+            document_hash=doc_hash,
         )
         db.add(doc)
+
+        await AuditTrail.log(db, claim_id, "DOCUMENT_UPLOADED", {
+            "document_id": file_id,
+            "filename": upload_file.filename,
+            "document_type": doc_type,
+            "document_hash": doc_hash,
+            "file_size_bytes": len(content)
+        })
 
     analysis_run_id = str(uuid.uuid4())
     analysis_run = AnalysisRun(

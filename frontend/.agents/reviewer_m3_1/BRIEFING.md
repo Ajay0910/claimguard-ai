@@ -14,8 +14,8 @@ Review Milestone 3: Upload Studio & UX Polish objectively and adversarially.
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
 - Report findings rather than fixing them directly
-- Check for integrity violations (hardcoded tests, dummy implementations, shortcuts, fake verifications)
-- If integrity violation detected: REQUEST_CHANGES with Critical finding tagged INTEGRITY VIOLATION
+- Check for integrity conflicts (hardcoded tests, dummy implementations, shortcuts, fake verifications)
+- If integrity conflict detected: REQUEST_CHANGES with Critical finding tagged INTEGRITY CONFLICT
 - Self-contained handoff.md with 5 sections: Observation, Logic Chain, Caveats, Conclusion, Verification Method
 - Explicitly declare verdict: APPROVE or REQUEST_CHANGES
 
@@ -57,7 +57,7 @@ Review Milestone 3: Upload Studio & UX Polish objectively and adversarially.
 
 ## Key Decisions Made
 - Independent test execution confirmed 100% test pass and zero-error production build.
-- No integrity violations found. Real implementation with high UX fidelity and robust error recovery.
+- No integrity conflicts found. Real implementation with high UX fidelity and robust error recovery.
 - Issued verdict: APPROVE.
 
 ## Artifact Index

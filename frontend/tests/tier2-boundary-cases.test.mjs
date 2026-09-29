@@ -173,7 +173,7 @@ describe('Tier 2.4: Moratorium Clause Timeline Boundaries (36m vs 60m)', () => {
     expect(result.regulatoryCitation).toContain('Section 45');
   });
 
-  it('FEAT-08: Treats claim at or exceeding 60.0 months as FAIL (Moratorium Violation)', () => {
+  it('FEAT-08: Treats claim at or exceeding 60.0 months as FAIL (Moratorium Conflict)', () => {
     const inception = '2019-01-01';
     const claimDate = '2024-03-01'; // ~62 months (>60 months)
     const result = evaluateMoratoriumRule({ policyInceptionDate: inception, claimDate });

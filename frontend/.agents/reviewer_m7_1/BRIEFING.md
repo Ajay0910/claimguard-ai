@@ -14,7 +14,7 @@ Conduct thorough quality and adversarial review of Milestone 7 (Motion Architect
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
 - Write only to .agents/reviewer_m7_1/
-- Actively check for integrity violations (mocked tests, facade implementations, hardcoded outputs)
+- Actively check for integrity conflicts (mocked tests, facade implementations, hardcoded outputs)
 - Objective evidence-based assessment
 
 ## Current Parent
@@ -57,7 +57,7 @@ Conduct thorough quality and adversarial review of Milestone 7 (Motion Architect
   - Vite production build: PASS (0 errors, 2069 modules transformed).
   - AnimatePresence direct child unmounting in mobile drawer: Noted as minor non-blocking optimization.
   - MetricCard sparkline connection: Identified that MotionSparklineCurve is prepared for M8 wiring.
-- **Vulnerabilities found**: No blocking defects, regressions, or integrity violations.
+- **Vulnerabilities found**: No blocking defects, regressions, or integrity conflicts.
 - **Untested angles**: Hardware-specific GPU acceleration quirks across legacy mobile webviews.
 
 ## Key Decisions Made

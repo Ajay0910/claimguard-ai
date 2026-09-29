@@ -4,7 +4,7 @@ Your working directory is: c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\
 Your task: Implement Milestone 4: Analysis & Forensics Hub (Features 12, 13, 14, 15, 16) in ClaimGuard AI Frontend.
 
 MANDATORY INTEGRITY WARNING:
-DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
+DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity conflicts WILL be detected and your work WILL be rejected.
 
 MANDATORY INPUTS TO READ:
 1. c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\ORIGINAL_REQUEST.md (Authoritative user requirements)
@@ -30,11 +30,11 @@ DETAILED REQUIREMENTS TO IMPLEMENT:
    - Currency formatted in INR (`formatINR`).
 
 2. **Feature 13: Interactive Rule Verdicts & Statutory Engine (`src/components/analysis/VerdictCard.jsx`)**:
-   - Categorized Tier 1 (Mandatory Statutory Violations) and Tier 2 (Clinical/Policy Inconsistencies) cards.
+   - Categorized Tier 1 (Mandatory Statutory Conflicts) and Tier 2 (Clinical/Policy Inconsistencies) cards.
    - Proportional visual delta bar displaying Insurer calculation vs Statutory correct amount with strikethrough and recovery delta.
    - 1-click IRDAI statutory clause copy button (`navigator.clipboard.writeText`) with interactive "Copied!" feedback.
    - Severity badges (`FAIL / MISMATCH`, `REVIEW`, `PASS`), AI confidence score (e.g. 98%), and itemized clause references.
-   - Category filter tabs (All, Tier 1 Statutory, Tier 2 Policy, Violations Only).
+   - Category filter tabs (All, Tier 1 Statutory, Tier 2 Policy, Conflicts Only).
 
 3. **Feature 14: Digital Forensics & Fraud Detection Lab (`src/components/analysis/ForensicsLab.jsx`)**:
    - ELA (Error Level Analysis) tamper score meter: Pure SVG 240-degree circular gauge (0-100) with needle, risk pill (Low / Moderate / Tamper Detected), and metadata analysis.

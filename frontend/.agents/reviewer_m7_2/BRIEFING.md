@@ -14,7 +14,7 @@ Milestone 7 Review: Inspect Sonner Toasts & Skeletons/Loaders migration, verify 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
 - Write only to .agents/reviewer_m7_2/
-- Actively check for integrity violations (hardcoded results, dummy implementations, shortcuts, fake logs)
+- Actively check for integrity conflicts (hardcoded results, dummy implementations, shortcuts, fake logs)
 - Must run tests independently
 
 ## Current Parent
@@ -53,7 +53,7 @@ Milestone 7 Review: Inspect Sonner Toasts & Skeletons/Loaders migration, verify 
 - Verified independent execution of `node tests/run-stress-tests.mjs` (all suites passed: 41 SSR, 56 upload challenger, charts & table stress).
 - Verified independent execution of `node tests/check-circular-deps.mjs` (zero circular dependencies across 30 modules).
 - Verified independent execution of `npm test` (72/72 passed) and `npm run build` (clean production bundle).
-- Integrity audit: Zero integrity violations, no dummy facades, no hardcoded cheating.
+- Integrity audit: Zero integrity conflicts, no dummy facades, no hardcoded cheating.
 - Verdict: APPROVE.
 
 ## Artifact Index

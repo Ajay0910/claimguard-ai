@@ -52,7 +52,7 @@ export default function Analysis() {
     [setSearchParams]
   );
 
-  // Verdict category filter state: 'ALL' | 'TIER1' | 'TIER2' | 'VIOLATIONS'
+  // Verdict category filter state: 'ALL' | 'TIER1' | 'TIER2' | 'CONFLICTS'
   const [verdictFilter, setVerdictFilter] = useState('ALL');
 
   // Query & Loading State
@@ -107,7 +107,7 @@ export default function Analysis() {
   const filteredVerdicts = useMemo(() => {
     if (!result?.rule_verdicts) return [];
     return result.rule_verdicts.filter((v) => {
-      if (verdictFilter === 'VIOLATIONS') return v.status === 'FAIL';
+      if (verdictFilter === 'CONFLICTS') return v.status === 'FAIL';
       if (verdictFilter === 'TIER1') {
         return (
           v.tier === 1 ||
@@ -159,7 +159,7 @@ export default function Analysis() {
             !v.rule_name?.toLowerCase().includes('mental health') &&
             !v.rule_name?.toLowerCase().includes('waiting period'))
       ).length,
-      violations: list.filter((v) => v.status === 'FAIL').length,
+      conflicts: list.filter((v) => v.status === 'FAIL').length,
     };
   }, [result?.rule_verdicts]);
 

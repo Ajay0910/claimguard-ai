@@ -22,7 +22,7 @@
    - `src/components/dashboard/DashboardCharts.jsx`: Created with three pure React + SVG/Tailwind charts:
      - `StatusDonutChart`: Annular ring (`stroke-dasharray`/`stroke-dashoffset` math on radius 68, circumference ≈ 427.26), slice hover enlargement (`strokeWidth` 20 -> 26), center counter displaying total/hovered slice, responsive legend, and cross-filtering callback `onSelectStatusFilter`.
      - `FinancialWaterfallChart`: Accounting reconciliation of Billed charges -> Insurer approved -> Disallowed deductions -> Contested/Recoverable -> Audited Net Payout with background gridlines, floating pills, and hover tooltips.
-     - `RuleViolationBarChart`: Ranked statutory violations (Proportionate deduction, room rent capping, consumables, moratorium clause, teleconsultation) with sort toggle (Frequency vs Recoverable INR), Tier 1/2 badges, win rate pills, progress bars, and citation clipboard copy with toast notification.
+     - `RuleConflictBarChart`: Ranked statutory conflicts (Proportionate deduction, room rent capping, consumables, moratorium clause, teleconsultation) with sort toggle (Frequency vs Recoverable INR), Tier 1/2 badges, win rate pills, progress bars, and citation clipboard copy with toast notification.
    - `src/components/dashboard/ClaimsTable.jsx`: Created enterprise data table featuring:
      - Multi-field search (Claim ID, Patient, Hospital, Policy No., Deduction Type) with clear button.
      - Sync with URL query parameter `?q=` from Topbar search.
@@ -82,7 +82,7 @@
 
 Milestone 2 (Executive Financial KPI Cards, Dashboard Visualizations, and Enterprise Claims Data Table) is completely implemented and verified. All acceptance criteria are satisfied:
 - Feature 6: 4 enhanced KPI cards with INR ₹ formatting, sparkline curve, variance indicators, and contextual status.
-- Feature 7: Pure SVG Status Donut Chart with cross-filtering callback, Financial Recovery Waterfall Chart, and Rule Violation Frequency Bar Chart.
+- Feature 7: Pure SVG Status Donut Chart with cross-filtering callback, Financial Recovery Waterfall Chart, and Rule Conflict Frequency Bar Chart.
 - Feature 8: Enterprise Claims Data Table with search, URL sync, status tabs, sortable columns, tripartite document pills, INR formatting, pagination, and empty states.
 - Dashboard Integration: Realistic skeletons, ErrorState with retry, priority alert banner, and responsive layout.
 

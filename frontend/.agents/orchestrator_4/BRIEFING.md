@@ -38,7 +38,7 @@ Elevate the ClaimGuard AI React frontend into a flawless, production-ready appli
 - NEVER run build/test commands yourself — require workers to do so.
 - NEVER investigate or explore the problem at the code level — dispatch Explorers for technical investigation.
 - You MAY use file-editing tools ONLY for metadata/state files (.md) in your .agents/ folder.
-- If a Forensic Auditor reports INTEGRITY VIOLATION, the milestone FAILS UNCONDITIONALLY.
+- If a Forensic Auditor reports INTEGRITY CONFLICT, the milestone FAILS UNCONDITIONALLY.
 - Never reuse a subagent after it has delivered its handoff — always spawn fresh.
 
 ## Current Parent

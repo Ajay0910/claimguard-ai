@@ -1,7 +1,7 @@
 # BRIEFING — 2026-09-17T18:33:00Z
 
 ## Mission
-Investigate and design technical specification for Feature 6 (Executive KPI Cards with sparklines) and Feature 7 (DashboardCharts: Status Donut, Financial Waterfall, Rule Violation Bar).
+Investigate and design technical specification for Feature 6 (Executive KPI Cards with sparklines) and Feature 7 (DashboardCharts: Status Donut, Financial Waterfall, Rule Conflict Bar).
 
 ## 🔒 My Identity
 - Archetype: teamwork_preview_explorer
@@ -41,7 +41,7 @@ Investigate and design technical specification for Feature 6 (Executive KPI Card
 - Use SVG + Tailwind for 100% dependency-free, robust, zero-hydration-issue rendering
 - Create enhanced `MetricCard.jsx` with backwards-compatible `SparklineCurve`, `variance`, `badges`, `targetPill`
 - Create `ExecutiveKpiCards.jsx` for the 4 Executive KPI cards grid
-- Create `DashboardCharts.jsx` containing `StatusDonutChart`, `FinancialWaterfallChart`, and `RuleViolationBarChart`
+- Create `DashboardCharts.jsx` containing `StatusDonutChart`, `FinancialWaterfallChart`, and `RuleConflictBarChart`
 - Provide full SVG geometry formulas, complete JSX templates, and prop types in `handoff.md`
 
 ## Artifact Index

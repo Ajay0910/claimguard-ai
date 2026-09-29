@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import DashboardCharts, {
   StatusDonutChart,
   FinancialWaterfallChart,
-  RuleViolationBarChart,
+  RuleConflictBarChart,
   formatInr,
   formatCompactInr,
   defaultDashboardAnalytics,
@@ -548,20 +548,20 @@ export function runChartStressTests() {
   }
 
   // =========================================================================
-  // SUITE 6: RuleViolationBarChart & Currency Helpers Stress
+  // SUITE 6: RuleConflictBarChart & Currency Helpers Stress
   // =========================================================================
 
-  // 6.1: RuleViolationBarChart with empty rules array
+  // 6.1: RuleConflictBarChart with empty rules array
   try {
-    const html = renderToStaticMarkup(<RuleViolationBarChart rules={[]} />);
+    const html = renderToStaticMarkup(<RuleConflictBarChart rules={[]} />);
     // Math.max(...[]) = -Infinity
     // percentage = (metricVal / -Infinity) * 100
     // But sortedRules is empty so it renders 0 rows
-    const rendersContainer = html.includes('Top Statutory Rule Violations');
+    const rendersContainer = html.includes('Top Statutory Rule Conflicts');
     const hasNaN = html.includes('NaN');
     record(
       'BAR-01',
-      'RuleViolationBarChart with empty rules array [] renders empty container without crashing',
+      'RuleConflictBarChart with empty rules array [] renders empty container without crashing',
       'Bar Chart',
       rendersContainer && !hasNaN,
       { rendersContainer, hasNaN },
@@ -571,12 +571,12 @@ export function runChartStressTests() {
     record('BAR-01', 'Bar chart empty rules crash', 'Bar Chart', false, { error: err.message }, 'MEDIUM');
   }
 
-  // 6.2: RuleViolationBarChart with rule having 0 count and 0 impact
+  // 6.2: RuleConflictBarChart with rule having 0 count and 0 impact
   try {
     const zeroRule = [
       {
         id: 'ZERO',
-        name: 'Zero Violation',
+        name: 'Zero Conflict',
         clause: 'IRDAI Cl 0',
         tier: 'Tier 1',
         count: 0,
@@ -585,7 +585,7 @@ export function runChartStressTests() {
         details: 'Zero rule',
       },
     ];
-    const html = renderToStaticMarkup(<RuleViolationBarChart rules={zeroRule} />);
+    const html = renderToStaticMarkup(<RuleConflictBarChart rules={zeroRule} />);
     // maxVal = Math.max(0) = 0
     // percentage = ((0 / 0) * 100).toFixed(0) = NaN
     // style="width: NaN%"
@@ -593,7 +593,7 @@ export function runChartStressTests() {
 
     record(
       'BAR-02',
-      'RuleViolationBarChart vulnerability check: rule with 0 count/impact produces width: NaN% (0 / 0)',
+      'RuleConflictBarChart vulnerability check: rule with 0 count/impact produces width: NaN% (0 / 0)',
       'Bar Chart',
       !hasNaN,
       {
@@ -653,7 +653,7 @@ export function runChartStressTests() {
     );
     const hasDonut = html.includes('Claim Adjudication Distribution');
     const hasWaterfall = html.includes('Financial Recovery Waterfall');
-    const hasBar = html.includes('Top Statutory Rule Violations');
+    const hasBar = html.includes('Top Statutory Rule Conflicts');
     const noNaN = !html.includes('NaN');
 
     record(

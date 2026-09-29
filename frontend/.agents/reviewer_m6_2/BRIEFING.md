@@ -13,7 +13,7 @@ Objective review and adversarial challenge of Milestone 6 Component Hardening wo
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Actively check for integrity violations (hardcoded test outputs, dummy implementations, shortcuts, fabricated verification, self-certifying work)
+- Actively check for integrity conflicts (hardcoded test outputs, dummy implementations, shortcuts, fabricated verification, self-certifying work)
 - Adhere to Teamwork protocol (DISPATCH.md, BRIEFING.md, progress.md, handoff.md, send_message)
 
 ## Current Parent
@@ -39,7 +39,7 @@ Objective review and adversarial challenge of Milestone 6 Component Hardening wo
 - **Review criteria**: correctness, completeness, quality, adversarial robustness, integrity
 
 ## Key Decisions Made
-- Confirmed zero integrity violations across all changes.
+- Confirmed zero integrity conflicts across all changes.
 - Verified test suite passes: `run-stress-tests.mjs` (41 SSR + 4 Challenger suites), `check-circular-deps.mjs` (0 circular deps), `check-imports.mjs` (all deps present), `npm test` (72/72 passed), `token-resolver.test.mjs` (1334/1334 tokens resolved), and `npm run build` (production build succeeded).
 - Issued review verdict: APPROVE with minor defense-in-depth recommendations for CSV leading whitespace and waterfall step null safety.
 

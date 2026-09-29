@@ -1,3 +1,4 @@
+from . import get_val
 """
 Denial Appeal Overturn Predictor & Statutory Ombudsman Risk Engine.
 Synthesized from:
@@ -9,13 +10,15 @@ Synthesized from:
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime, date
 from ..schemas.appeal_evaluation import AppealEvaluationResult
+from .rule_registry import register_rule
+from ..schemas.analysis_result import RuleVerdict
 
 
 class AppealEvaluator:
     """
     Evaluates health insurance claim rejection/deduction notices against clinical necessity,
     IRDAI regulatory circulars, and Insurance Ombudsman legal precedents.
-    Calculates appeal overturn probability and dispute liability risk for insurers.
+    Determines deterministic appeal viability and dispute liability risk for insurers.
     """
 
     def __init__(self):
@@ -30,7 +33,7 @@ class AppealEvaluator:
         claim = claim_data or {}
         policy = policy_data or {}
 
-        statutory_violations: List[str] = []
+        statutory_conflicts: List[str] = []
         legal_precedents: List[str] = []
         appeal_grounds: List[str] = []
         action_plan: List[str] = []
@@ -57,7 +60,7 @@ class AppealEvaluator:
             elapsed_months = max(0.0, (claim_date - policy_start).days / 30.44)
 
         # -------------------------------------------------------------
-        # 1. EVALUATE STATUTORY GROUNDS & VIOLATIONS
+        # 1. EVALUATE STATUTORY GROUNDS & CONFLICTS
         # -------------------------------------------------------------
 
         # Check A: Moratorium Period Breach (Section 45 / IRDAI Master Circular 2024 Para 5.3)
@@ -71,8 +74,8 @@ class AppealEvaluator:
         moratorium_months = policy.get("moratorium_period_months", 60) or 60
 
         if has_ped_denial and elapsed_months >= moratorium_months:
-            statutory_violations.append(
-                f"Moratorium Violation: Policy has run for {elapsed_months:.1f} months, exceeding statutory {moratorium_months}-month moratorium. "
+            statutory_conflicts.append(
+                f"Moratorium Conflict: Policy has run for {elapsed_months:.1f} months, exceeding statutory {moratorium_months}-month moratorium. "
                 "Under IRDAI Master Circular May 2024 (Para 5.3) & Insurance Act Sec 45, the insurer is legally barred from repudiating on non-disclosure or PED."
             )
             legal_precedents.append(
@@ -96,8 +99,8 @@ class AppealEvaluator:
         )
 
         if has_mental_health_denial or (diagnosis_mh and has_ped_denial):
-            statutory_violations.append(
-                "Mental Health Parity Violation: Section 21(4) of the Mental Healthcare Act, 2017 and IRDAI circulars mandate that mental illnesses be treated at par with physical illnesses without discriminatory exclusions."
+            statutory_conflicts.append(
+                "Mental Health Parity Conflict: Section 21(4) of the Mental Healthcare Act, 2017 and IRDAI circulars mandate that mental illnesses be treated at par with physical illnesses without discriminatory exclusions."
             )
             legal_precedents.append(
                 "Delhi High Court: Shikha Nischal vs. National Insurance Co. Ltd. (W.P.(C) 3170/2021) — Held that insurance companies cannot discriminate against or reject claims for mental illness treatments."
@@ -114,7 +117,7 @@ class AppealEvaluator:
             for r in normalized_reasons
         )
         if has_proportionate_deduction:
-            statutory_violations.append(
+            statutory_conflicts.append(
                 "Arbitrary Proportionate Deduction: IRDAI circulars clarify that proportionate deduction can strictly apply ONLY to room-linked charges (e.g. nursing, room rent), not to fixed OT charges, medicines, implants, or diagnostic investigations."
             )
             legal_precedents.append(
@@ -133,7 +136,7 @@ class AppealEvaluator:
             for r in normalized_reasons
         )
         if is_emergency and has_waiting_period_denial:
-            statutory_violations.append(
+            statutory_conflicts.append(
                 "Emergency Exception Breach: Initial 30-day waiting period is statutorily exempted for emergency hospitalizations, trauma, and acute accidental injuries under IRDAI standard guidelines."
             )
             legal_precedents.append(
@@ -152,7 +155,7 @@ class AppealEvaluator:
         ) and len(normalized_reasons) <= 1
 
         if has_vague_denial or not normalized_reasons:
-            statutory_violations.append(
+            statutory_conflicts.append(
                 "Procedural Defect: Vague repudiation letter without itemized clause linkage violates Insurance Ombudsman Rules 2017 (Rule 13) and IRDAI Fair Treatment of Policyholders Guidelines."
             )
             legal_precedents.append(
@@ -167,7 +170,7 @@ class AppealEvaluator:
         decision_date = self._parse_date(claim.get("rejection_date") or claim.get("decision_date"))
         tat_days = (decision_date - submission_date).days if submission_date and decision_date else 0
         if tat_days > 30:
-            statutory_violations.append(
+            statutory_conflicts.append(
                 f"Statutory Turnaround Breach: Claim adjudication took {tat_days} days (statutory limit: 30 days). Under IRDAI Master Circular 2024, insurer is liable to pay penal interest at Bank Rate + 2%."
             )
             appeal_grounds.append(
@@ -175,52 +178,14 @@ class AppealEvaluator:
             )
 
         # -------------------------------------------------------------
-        # 2. STATISTICAL OVERTURN PROBABILITY & OMBUDSMAN RISK
-        # (Based on Owolabi Elastic Net regularized weights & Mathew IRDAI empirical win-rates)
+        # 2. DETERMINISTIC APPEAL VIABILITY (NO HEURISTICS)
         # -------------------------------------------------------------
-        base_overturn = 25.0  # Baseline appeal overturn rate across all commercial claims
-
-        # Additive probability shifts based on concrete legal defects
-        if has_ped_denial and elapsed_months >= moratorium_months:
-            base_overturn += 62.0  # Moratorium claims win 90%+ at Ombudsman
-
-        if has_mental_health_denial or (diagnosis_mh and has_ped_denial):
-            base_overturn += 58.0  # Mental health parity has binding high court precedent
-
-        if has_proportionate_deduction:
-            base_overturn += 45.0  # Proportionate deduction adjustments succeed 78% of the time
-
-        if is_emergency and has_waiting_period_denial:
-            base_overturn += 52.0  # Emergency waiting period exemption wins 85%
-
-        if has_vague_denial:
-            base_overturn += 30.0  # Vague notices reversed in 68% of hearings
-
-        if tat_days > 30:
-            base_overturn += 15.0
-
-        # Penalize clearly legitimate exclusions (e.g. pure aesthetic/cosmetic procedures)
-        is_cosmetic = any(
-            kw in all_text or kw in str(claim.get("diagnosis", "")).lower()
-            for kw in ["cosmetic", "aesthetic", "rhinoplasty", "botox"]
-        )
-        if is_cosmetic:
-            base_overturn -= 40.0
-
-        overturn_prob = max(5.0, min(96.0, round(base_overturn, 1)))
-
+        # Viability is strictly dependent on the presence of verified statutory conflicts
         # Determine appeal viability tier
-        if overturn_prob >= 70.0:
+        if statutory_conflicts:
             appeal_viability = "STRONG"
-        elif overturn_prob >= 40.0:
-            appeal_viability = "MODERATE"
         else:
             appeal_viability = "LOW"
-
-        # Ombudsman dispute risk (risk that insurer loses and faces statutory penalties)
-        ombudsman_risk = round(min(98.0, max(10.0, overturn_prob * 1.05)), 1)
-        if statutory_violations:
-            ombudsman_risk = max(ombudsman_risk, 75.0)
 
         # -------------------------------------------------------------
         # 3. CONSTRUCT ACTION PLAN
@@ -228,9 +193,9 @@ class AppealEvaluator:
         action_plan.append(
             "Step 1: Draft Formal Internal Grievance: Submit a written representation to the Insurer's Grievance Redressal Officer (GRO) citing IRDAI Master Circular May 2024 and relevant legal precedents within 15 days."
         )
-        if statutory_violations:
+        if statutory_conflicts:
             action_plan.append(
-                f"Step 2: Highlight Statutory Violations: Explicitly emphasize the following detected non-compliances: {statutory_violations[0]}"
+                f"Step 2: Highlight Statutory Conflicts: Explicitly emphasize the following detected non-compliances: {statutory_conflicts[0]}"
             )
         action_plan.append(
             "Step 3: Escalate to IRDAI Bima Bharosa Portal: If the insurer does not respond within 15 days or rejects the internal grievance, register a formal complaint on the IRDAI Bima Bharosa online portal."
@@ -243,13 +208,45 @@ class AppealEvaluator:
         )
 
         return AppealEvaluationResult(
-            overturn_probability=overturn_prob,
             appeal_viability=appeal_viability,
-            ombudsman_dispute_risk=ombudsman_risk,
-            statutory_violations_detected=statutory_violations,
+            statutory_conflicts_detected=statutory_conflicts,
             key_legal_precedents=legal_precedents,
             recommended_appeal_grounds=appeal_grounds,
             suggested_action_plan=action_plan,
+        )
+
+    def evaluate_verdicts(self, verdicts: List[RuleVerdict]) -> AppealEvaluationResult:
+        failed_rules = [v for v in verdicts if v.status == "FAIL"]
+        conflict_rules = [v for v in verdicts if v.status == "WARNING"]
+
+        if not failed_rules and not conflict_rules:
+            return AppealEvaluationResult(
+                appeal_viability="LOW",
+                statutory_conflicts_detected=[],
+                key_legal_precedents=[],
+                recommended_appeal_grounds=[],
+                suggested_action_plan=["No actionable conflicts detected."]
+            )
+
+        conflicts = []
+        grounds = []
+        for f in failed_rules:
+            if f.regulatory_citation:
+                conflicts.append(f"{f.rule_name} Conflict: {f.regulatory_citation}")
+            if f.appeal_recommendation:
+                grounds.append(f"{f.appeal_recommendation}")
+
+        return AppealEvaluationResult(
+            appeal_viability="STRONG" if failed_rules else "MODERATE",
+            statutory_conflicts_detected=conflicts,
+            key_legal_precedents=[],
+            recommended_appeal_grounds=grounds,
+            suggested_action_plan=[
+                "Step 1: Draft Formal Internal Grievance to the Insurer's GRO.",
+                "Step 2: Highlight the exact deterministic mathematical conflicts calculated above.",
+                "Step 3: Escalate to IRDAI Bima Bharosa Portal if unresolved within 15 days.",
+                "Step 4: File Complaint with Insurance Ombudsman under Rule 14."
+            ]
         )
 
     def _normalize_reasons(self, denial_reasons: List[Union[str, Any]]) -> List[Dict[str, str]]:
@@ -285,10 +282,10 @@ class AppealEvaluator:
                 normalized.append(d)
             else:
                 normalized.append({
-                    "code": str(getattr(r, "code", "UNKNOWN") or "UNKNOWN"),
-                    "category": str(getattr(r, "category", "GENERAL") or "GENERAL"),
-                    "description": str(getattr(r, "description", "") or str(r)),
-                    "details": str(getattr(r, "details", "") or ""),
+                    "code": str(get_val(r, "code", "UNKNOWN") or "UNKNOWN"),
+                    "category": str(get_val(r, "category", "GENERAL") or "GENERAL"),
+                    "description": str(get_val(r, "description", "") or str(r)),
+                    "details": str(get_val(r, "details", "") or ""),
                 })
         return normalized
 
@@ -310,40 +307,33 @@ class AppealEvaluator:
         return None
 
 
-from .rule_registry import register_rule
-from ..schemas.analysis_result import RuleVerdict
-
-@register_rule(
-    name="Denial Contestability & Ombudsman Dispute Rule",
-    description="Predicts appeal overturn probability and statutory Ombudsman dispute risk under IRDAI guidelines.",
-    tier=2,
-    regulatory_citation="Insurance Ombudsman Rules 2017; IRDAI Master Circular May 2024"
-)
+# The Denial Contestability Rule should NOT be in the deterministic rule engine.
+# It acts as an overlay, so we do not register it in the core deterministic RuleEngine.
 def check_appeal_viability(bill: Any, policy: Any, rejection: Any) -> RuleVerdict:
-    reasons = getattr(rejection, 'rejection_reasons', None) or getattr(rejection, 'reasons', []) or []
+    reasons = get_val(rejection, 'rejection_reasons', None) or get_val(rejection, 'reasons', []) or []
     if not reasons:
-        return RuleVerdict(
+        return RuleVerdict(finding_type="NEEDS_REVIEW", 
             status="SKIPPED",
-            rule_name="Denial Contestability & Ombudsman Dispute Rule",
-            rule_description="Predicts appeal overturn probability and statutory Ombudsman dispute risk.",
+            rule_name="Denial Contestability Rule",
+            rule_description="Evaluates statutory validity of denial.",
             confidence=1.0,
             finding="No rejection reasons provided for contestability analysis."
         )
 
     evaluator = AppealEvaluator()
     claim_data = {
-        "claim_id": getattr(bill, 'bill_id', None) or getattr(rejection, 'claim_number', ""),
-        "claim_date": getattr(rejection, 'claim_date', None),
-        "claimed_amount": getattr(rejection, 'total_claimed', 0.0),
-        "approved_amount": getattr(rejection, 'total_approved', 0.0),
-        "deducted_amount": getattr(rejection, 'total_deducted', 0.0),
-        "diagnosis": getattr(bill, 'diagnosis', "") if bill else "",
+        "claim_id": get_val(bill, 'bill_id', None) or get_val(rejection, 'claim_number', ""),
+        "claim_date": get_val(rejection, 'claim_date', None),
+        "claimed_amount": get_val(rejection, 'total_claimed', 0.0),
+        "approved_amount": get_val(rejection, 'total_approved', 0.0),
+        "deducted_amount": get_val(rejection, 'total_deducted', 0.0),
+        "diagnosis": get_val(bill, 'diagnosis', "") if bill else "",
     }
     policy_data = {
-        "policy_start_date": getattr(policy, 'policy_start_date', None) if policy else None,
-        "inception_date": getattr(policy, 'inception_date', getattr(policy, 'original_inception_date', None)) if policy else None,
-        "moratorium_period_months": getattr(policy, 'moratorium_period_months', 60) if policy else 60,
-        "covers_mental_health": getattr(policy, 'covers_mental_health', False) if policy else False,
+        "policy_start_date": get_val(policy, 'policy_start_date', None) if policy else None,
+        "inception_date": get_val(policy, 'inception_date', getattr(policy, 'original_inception_date', None)) if policy else None,
+        "moratorium_period_months": get_val(policy, 'moratorium_period_months', 60) if policy else 60,
+        "covers_mental_health": get_val(policy, 'covers_mental_health', False) if policy else False,
     }
 
     result = evaluator.evaluate_denial(reasons, claim_data, policy_data)
@@ -351,21 +341,20 @@ def check_appeal_viability(bill: Any, policy: Any, rejection: Any) -> RuleVerdic
     if result.appeal_viability == "STRONG":
         status = "FAIL"
         finding = (
-            f"High appeal overturn probability ({result.overturn_probability}%). "
-            f"Statutory dispute risk: {result.ombudsman_dispute_risk}%. "
-            + (f"Violations: {'; '.join(result.statutory_violations_detected)}" if result.statutory_violations_detected else "Viable appeal grounds exist.")
+            "Statutory conflicts detected. "
+            + (f"Conflicts: {'; '.join(result.statutory_conflicts_detected)}" if result.statutory_conflicts_detected else "Viable appeal grounds exist.")
         )
     elif result.appeal_viability == "MODERATE":
         status = "NEEDS_REVIEW"
-        finding = f"Moderate appeal overturn probability ({result.overturn_probability}%). Ombudsman dispute risk: {result.ombudsman_dispute_risk}%."
+        finding = "Moderate viability based on secondary findings."
     else:
         status = "PASS"
-        finding = f"Denial appears legally defensible with low overturn probability ({result.overturn_probability}%)."
+        finding = "Denial appears legally defensible with no statutory conflicts."
 
-    return RuleVerdict(
+    return RuleVerdict(finding_type="NEEDS_REVIEW", 
         status=status,
-        rule_name="Denial Contestability & Ombudsman Dispute Rule",
-        rule_description="Predicts appeal overturn probability and statutory Ombudsman dispute risk under IRDAI guidelines.",
+        rule_name="Denial Contestability Rule",
+        rule_description="Evaluates statutory validity of denial under IRDAI guidelines.",
         confidence=0.90,
         finding=finding,
         regulatory_citation="Insurance Ombudsman Rules 2017; IRDAI Master Circular May 2024",

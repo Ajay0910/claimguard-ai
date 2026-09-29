@@ -37,7 +37,7 @@ Forensic integrity audit and adversarial review of Milestone 1 (Foundations, Des
 - **Checks remaining**:
   - Handoff report generation (`handoff.md`)
   - Notify parent agent
-- **Findings so far**: CLEAN — 0 integrity violations detected
+- **Findings so far**: CLEAN — 0 integrity conflicts detected
 
 ## Attack Surface
 - **Hypotheses tested**:

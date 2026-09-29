@@ -12,7 +12,7 @@ const STAGES = [
   { key: 'PENDING',    label: 'Documents Received',   icon: FileText,    desc: 'Your documents have been securely uploaded.' },
   { key: 'EXTRACTING', label: 'Reading Documents',    icon: Zap,         desc: 'Our AI is extracting data from your files.' },
   { key: 'ANALYZING',  label: 'Analysing Your Claim', icon: BarChart3,   desc: 'Checking against IRDAI regulations.' },
-  { key: 'COMPLETED',  label: 'Analysis Complete',    icon: CheckCircle2, desc: 'Your full report is ready.' },
+  { key: 'COMPLETED',  label: 'Analysis Complete',    icon: ShieldCheck, desc: 'Your full report is ready.' },
 ]
 
 function getStageIndex(status) {
@@ -56,8 +56,8 @@ function PipelineProgress({ currentStatus }) {
         <div className="space-y-5 relative z-10">
           {STAGES.map((stage, i) => {
             const Icon = stage.icon
-            const isDone = currentIdx > i
-            const isActive = currentIdx === i && !isFailed
+            const isDone = currentIdx > i || (currentStatus === 'COMPLETED' && currentIdx === i)
+            const isActive = currentIdx === i && !isFailed && !isDone
             const isPending = currentIdx < i
 
             return (

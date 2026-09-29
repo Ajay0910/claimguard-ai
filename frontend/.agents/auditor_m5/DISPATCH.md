@@ -8,5 +8,5 @@ Perform a Forensic Integrity Audit on the complete ClaimGuard AI frontend projec
    - Verify that the cryptographic hash chain in `AuditTimeline.jsx` performs genuine SHA-256 validation.
    - Verify zero cheating and complete authentic implementation across all milestones.
 2. Check that the build is genuine and contains real compiled code.
-3. Write a thorough forensic integrity report to `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\auditor_m5\handoff.md` with a definitive verdict: `CLEAN` or `INTEGRITY VIOLATION`.
+3. Write a thorough forensic integrity report to `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend\.agents\auditor_m5\handoff.md` with a definitive verdict: `CLEAN` or `INTEGRITY CONFLICT`.
 4. Send a message to parent (`f7266c02-c6a6-4b2c-9f23-75f1cca7c70f`) when complete.

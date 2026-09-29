@@ -18,7 +18,7 @@ Write Ownership:
 
 Features to Implement:
 1. Feature 6: Executive Financial KPI Cards
-2. Feature 7: Dashboard Visualizations (DashboardCharts.jsx: Donut chart with cross-filtering, Waterfall chart, Violation Frequency Bar chart)
+2. Feature 7: Dashboard Visualizations (DashboardCharts.jsx: Donut chart with cross-filtering, Waterfall chart, Conflict Frequency Bar chart)
 3. Feature 8: Enterprise Claims Data Table (ClaimsTable.jsx: full-text search, URL param sync, status tabs, sortable columns, tripartite document pills, INR formatting, pagination, empty states)
 4. Integration in src/pages/Dashboard.jsx (getStats, getClaims, skeletons, error state, priority alert banner, cross-filter sync)
 

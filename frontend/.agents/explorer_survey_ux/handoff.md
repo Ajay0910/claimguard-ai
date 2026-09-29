@@ -58,7 +58,7 @@ A full code audit of `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend` and 
 - **Generic AI Template Look in `StatsCard.jsx` (lines 1-25)**:
   Every card uses identical icon background colors (`bg-blue-50 text-blue-600`), even for alerts (`AlertTriangle`) and currency (`IndianRupee`). No visual priority, no sparkline, and no semantic color differentiation.
 - **Complete Lack of Data Visualizations**:
-  The dashboard has zero charts. No claim outcome distribution (Clean vs Mismatch Detected vs Fraud Flagged), no monthly recoverable savings trajectory, no rule violation distribution (e.g. Proportionate Deduction, Moratorium clause, Mental Health parity), and no turnaround time metrics.
+  The dashboard has zero charts. No claim outcome distribution (Clean vs Mismatch Detected vs Fraud Flagged), no monthly recoverable savings trajectory, no rule conflict distribution (e.g. Proportionate Deduction, Moratorium clause, Mental Health parity), and no turnaround time metrics.
 - **Recent Claims Table Deficiencies (lines 90-155)**:
   - No search bar to search claims.
   - No status filter tabs (e.g., All, Pending, Analyzing, Mismatch Detected, Completed, Failed).
@@ -124,7 +124,7 @@ A full code audit of `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend` and 
 4. **Conclusion**: To eliminate the generic "AI prototype" aesthetic and achieve enterprise healthcare production standards, the frontend requires:
    - A standardized design token system (slate-900 midnight, medical teal/cyan, crisp risk status tokens).
    - An enterprise layout shell (desktop top navigation with global claim search, breadcrumbs, auditor persona, and system API health monitor).
-   - A data-driven Dashboard with visual KPI metrics, interactive SVG/Recharts visualizations (claim status distribution, recovery timeline, rule violation frequency), and a searchable, sortable claims data table with multi-document status chips.
+   - A data-driven Dashboard with visual KPI metrics, interactive SVG/Recharts visualizations (claim status distribution, recovery timeline, rule conflict frequency), and a searchable, sortable claims data table with multi-document status chips.
    - A versatile Upload Studio supporting both batch multi-file drop and stepped modes with file metadata inspection and OCR extraction status.
    - A multi-tab Claim Analysis & Forensics Hub featuring an Executive Financial Reconciliation waterfall, Visual Rule Verdicts with delta comparison bars, an ELA Tamper & Forensics Lab with heatmap inspection, a Cryptographic Audit Trail, and a formal IRDAI Grievance Letter Generator.
 
@@ -209,7 +209,7 @@ A full code audit of `c:\Users\krusheek\Desktop\SIH\claimguard-ai\frontend` and 
 2. **Data Visualizations Section (New Component `DashboardCharts.jsx`)**:
    - **Chart A (Claims Status Breakdown)**: Semi-donut or donut chart categorizing claims into `No Mismatch (Approved)`, `Unfair Deductions Found`, `Review Recommended`, and `Forensic Alert`.
    - **Chart B (Financial Recovery Trend / Recovery Waterfall)**: Visual bar / area chart comparing `Total Amount Billed` vs `Insurer Approved` vs `Recoverable Underpayment`.
-   - **Chart C (Frequent Rule Violations)**: Horizontal progress/bar chart highlighting top violation categories:
+   - **Chart C (Frequent Rule Conflicts)**: Horizontal progress/bar chart highlighting top conflict categories:
      - Room Rent Proportionate Deductions (IRDAI Circular 2020)
      - Moratorium Period Breaches (Section 45)
      - Mental Health Parity Deductions (MHA 2017)
@@ -266,7 +266,7 @@ The redesigned Claim Analysis view must be organized into a **Unified 4-Tab Work
 
 2. **Tab 1: Rule Engine Verdicts (`VerdictCard.jsx` Redesign)**:
    - Categorization by Statutory Tier:
-     - **Tier 1: Regulatory Violations** (Proportionate deduction violations, Moratorium clause violations, Mental Health parity).
+     - **Tier 1: Regulatory Conflicts** (Proportionate deduction conflicts, Moratorium clause conflicts, Mental Health parity).
      - **Tier 2: Disallowed Line Items & Tariff Mismatches** (Unbundled anesthesia, non-medical charges).
    - **Interactive Comparison Widget**:
      - Visual delta slider/bar comparing `Insurer Paid (₹0)` vs `Correct Calculation (₹14,000)`.

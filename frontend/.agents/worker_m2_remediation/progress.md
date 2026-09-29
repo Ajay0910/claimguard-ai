@@ -13,7 +13,7 @@ Last visited: 2026-09-17T18:49:00Z
 3. ✅ Remediated `src/components/dashboard/DashboardCharts.jsx`:
    - Lines 334-376: Guarded `maxVal` and `safeMaxVal` in `FinancialWaterfallChart` against `<= 0` or `NaN` to prevent `height: NaNpx` and `margin-bottom: NaNpx` when `total_recovered_amount = 0`.
    - Lines 160-188: Calculated `activeCategoriesCount` in `StatusDonutChart` and applied `gapPadding` only when `activeCategoriesCount > 1`, eliminating the 2.5px gap notch on 100% single-status datasets.
-   - Lines 474-530: Guarded `maxVal` in `RuleViolationBarChart` to ensure `maxVal >= 1` and clamped `percentage` to prevent `NaN%`.
+   - Lines 474-530: Guarded `maxVal` in `RuleConflictBarChart` to ensure `maxVal >= 1` and clamped `percentage` to prevent `NaN%`.
    - Lines 181-187: Guarded `onSelectStatusFilter` callback with `typeof onSelectStatusFilter === 'function'`.
    - Lines 26-34: Enhanced `formatCompactInr` to format negative values with magnitude and `-₹` prefix.
 4. ✅ Remediated `src/components/common/MetricCard.jsx`:

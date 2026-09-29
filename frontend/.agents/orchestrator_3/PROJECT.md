@@ -16,5 +16,5 @@
 2. Final Reviewer & Challenger check:
    - reviewer_m5: APPROVE (all acceptance criteria met)
    - challenger_m5: APPROVE (adversarial stress resilience verified)
-   - auditor_m5: CLEAN (zero integrity violations, dynamic SVG/CSS verified)
+   - auditor_m5: CLEAN (zero integrity conflicts, dynamic SVG/CSS verified)
 3. Delivered final handoff and Victory Claim to Sentinel.

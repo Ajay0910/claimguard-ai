@@ -23,17 +23,31 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
             
             # 2. Extract
             from ..config import settings
-            vlm_api_key = settings.OPENAI_API_KEY if settings.VLM_PROVIDER == "openai" else settings.ANTHROPIC_API_KEY
+            vlm_api_key = settings.OPENAI_API_KEY if settings.VLM_PROVIDER == "openai" else (settings.GEMINI_API_KEY if settings.VLM_PROVIDER == "gemini" else settings.ANTHROPIC_API_KEY)
             pipeline = ExtractionPipeline(config={"vlm_provider": settings.VLM_PROVIDER, "vlm_api_key": vlm_api_key})
             extracted_bill = None
             extracted_policy = None
             extracted_rejection = None
             
+            extraction_verdicts = []
             for doc in documents:
                 extracted = pipeline.process_document(doc.file_path, expected_type=doc.document_type)
                 data = extracted.get("data")
+                status = extracted.get("status", "SUCCESS")
+                issues = extracted.get("issues", [])
+                
+                if status in ["NEEDS_REVIEW", "INSUFFICIENT_EVIDENCE"]:
+                    from ..schemas.analysis_result import RuleVerdict
+                    extraction_verdicts.append(RuleVerdict(
+                        rule_name=f"{doc.document_type} Extraction Validation",
+                        rule_description="Validates that critical fields are present and confident.",
+                        status=status,
+                        confidence=0.0 if status == "INSUFFICIENT_EVIDENCE" else 1.0,
+                        finding=f"Extraction issues found: {', '.join(issues)}"
+                    ))
+                    
                 if data:
-                    doc.extracted_data = data.model_dump() if hasattr(data, "model_dump") else (data.dict() if hasattr(data, "dict") else data)
+                    doc.extracted_data = data.model_dump(mode='json') if hasattr(data, "model_dump") else (data.dict() if hasattr(data, "dict") else data)
                 else:
                     doc.extracted_data = extracted
                 
@@ -46,19 +60,38 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
                     
             await AuditTrail.log(db, claim_id, "EXTRACTION_COMPLETED", {"documents_processed": len(documents)})
             
+            from ..schemas.evidence_ledger import EvidenceLedger
+            evidence_ledger = EvidenceLedger(claim_id=claim_id)
+            
             # 3. Rule engine
             engine = RuleEngine()
             analysis_result = engine.run_all_rules(
                 bill=extracted_bill,
                 policy=extracted_policy,
-                rejection=extracted_rejection
+                rejection=extracted_rejection,
+                ledger=evidence_ledger
             )
+            
+            analysis_result.evidence_ledger = evidence_ledger
+            
+            # Post-process to enforce Point 14 (Downgrade status if evidence is missing or confidence < 0.8)
+            for verdict in analysis_result.rule_verdicts:
+                if verdict.status in ["BLOCKED", "SKIPPED", "NOT_APPLICABLE"]:
+                    continue
+                if verdict.confidence < 0.8:
+                    if verdict.status not in ["NEEDS_REVIEW", "CONFLICT", "INSUFFICIENT_EVIDENCE"]:
+                        verdict.status = "INSUFFICIENT_EVIDENCE"
+            
+            if extraction_verdicts:
+                analysis_result.rule_verdicts.extend(extraction_verdicts)
+                analysis_result.overall_status = "REVIEW_RECOMMENDED"
+                analysis_result.compute_aggregates()
             
             # Run Forensics Engine
             from ..forensics.engine import ForensicsEngine
             forensics_engine = ForensicsEngine()
             forensics_res = forensics_engine.run(documents, bill=extracted_bill)
-            forensics_dict = forensics_res.model_dump() if hasattr(forensics_res, "model_dump") else (forensics_res.dict() if hasattr(forensics_res, "dict") else forensics_res)
+            forensics_dict = forensics_res.model_dump(mode='json') if hasattr(forensics_res, "model_dump") else (forensics_res.dict() if hasattr(forensics_res, "dict") else forensics_res)
             
             # 4. Store results
             result_query = await db.execute(select(AnalysisRun).where(AnalysisRun.id == analysis_run_id))
@@ -66,7 +99,7 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
             analysis_run.status = "COMPLETED"
             analysis_run.completed_at = datetime.utcnow()
             
-            result_dict = analysis_result.model_dump() if hasattr(analysis_result, "model_dump") else analysis_result.dict()
+            result_dict = analysis_result.model_dump(mode='json') if hasattr(analysis_result, "model_dump") else analysis_result.dict()
             result_dict["forensics"] = forensics_dict
             analysis_run.result_data = result_dict
             
@@ -84,7 +117,13 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
                     finding=verdict.finding,
                     monetary_impact=verdict.monetary_impact if hasattr(verdict, "monetary_impact") else 0.0,
                     regulatory_citation=verdict.regulatory_citation if hasattr(verdict, "regulatory_citation") else None,
-                    appeal_recommendation=verdict.appeal_recommendation if hasattr(verdict, "appeal_recommendation") else None
+                    appeal_recommendation=verdict.appeal_recommendation if hasattr(verdict, "appeal_recommendation") else None,
+                    actual_claim_fact=verdict.actual_claim_fact if hasattr(verdict, "actual_claim_fact") else None,
+                    applicable_policy_rule=verdict.applicable_policy_rule if hasattr(verdict, "applicable_policy_rule") else None,
+                    insurer_applied_action=verdict.insurer_applied_action if hasattr(verdict, "insurer_applied_action") else None,
+                    expected_action=verdict.expected_action if hasattr(verdict, "expected_action") else None,
+                    difference=verdict.difference if hasattr(verdict, "difference") else None,
+                    evidence=verdict.evidence if hasattr(verdict, "evidence") else None
                 ))
             
             # 5. Update claim status
