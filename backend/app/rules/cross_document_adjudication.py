@@ -68,7 +68,7 @@ def evaluate_cross_document_adjudication(bill: HospitalBill, policy: InsurancePo
     
     status = "NEEDS_REVIEW" if difference > 0 else "PASS"
     
-    return RuleVerdict(finding_type="DOCUMENT_INCONSISTENCY", 
+    return RuleVerdict(finding_type="FINANCIAL_DISCREPANCY", 
         status=status,
         rule_name="Cross-Document Adjudication",
         rule_description="Explicitly connects Hospital Bill, Insurance Policy, and Rejection Letter.",

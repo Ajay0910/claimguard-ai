@@ -63,6 +63,9 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
         
         room_linked_items = []
         room_linked_codes = []
+        room_only_codes = []
+        misc_codes = []
+        misc_total = 0.0
         
         for i, item in enumerate(get_val(bill, 'line_items', [])):
             cat = get_val(item, 'category', '').upper()
@@ -78,6 +81,31 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
             if is_linked or cat in ['NURSING', 'CONSULTATION']:
                 room_linked_items.append(item)
                 room_linked_codes.append(str(code))
+                
+            if cat == 'ROOM':
+                room_only_codes.append(str(code))
+                
+            if cat == 'MISCELLANEOUS':
+                misc_codes.append(str(code))
+                misc_total += fmath.extract(get_val(item, 'amount', 0.0))
+                
+        if state and total_room_excess > 0 and room_only_codes:
+            state.apply_deduction(
+                rule_id="Proportionate Deduction Rule",
+                target_item_codes=room_only_codes,
+                deduction_amount=total_room_excess,
+                formula=f"Room Excess: (Actual - Limit) * Days",
+                policy_clause="Room Rent Limit Clause"
+            )
+            
+        if state and misc_total > 0 and misc_codes:
+            state.apply_deduction(
+                rule_id="Proportionate Deduction Rule",
+                target_item_codes=misc_codes,
+                deduction_amount=misc_total,
+                formula="Sum of MISCELLANEOUS items",
+                policy_clause="Non-Medical Expenses Clause"
+            )
                 
         if state:
             room_linked_sum = sum(state.get_balance(code) for code in room_linked_codes)

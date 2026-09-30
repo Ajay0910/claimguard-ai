@@ -252,23 +252,6 @@ class RuleEngine:
             reconciliation_failed = True
             if overall_status == "NO_MISMATCH_FOUND":
                 overall_status = "MISMATCH_DETECTED"
-            verdicts.append(RuleVerdict(finding_type="FINANCIAL_DISCREPANCY", 
-                status="FAIL",
-                rule_name="Final Financial Reconciliation Gate",
-                rule_description="Expected Payable minus Insurer Payable must equal 0, else there is a discrepancy.",
-                confidence=1.0,
-                finding=f"Reconciliation Failed: Expected Payable (₹{expected_payable_f:.2f}) - Insurer Payable (₹{insurer_payable_f:.2f}) = Disputed Amount (₹{disputed_amount_f:.2f}).",
-                monetary_impact=disputed_amount_f
-            ))
-        else:
-            verdicts.append(RuleVerdict(finding_type="FINANCIAL_DISCREPANCY", 
-                status="PASS",
-                rule_name="Final Financial Reconciliation Gate",
-                rule_description="Expected Payable minus Insurer Payable must equal 0.",
-                confidence=1.0,
-                finding=f"Reconciliation Passed: Expected Payable (₹{expected_payable_f:.2f}) matches Insurer Payable (₹{insurer_payable_f:.2f}).",
-                monetary_impact=0.0
-            ))
             
         fail_count = sum(1 for v in verdicts if v.status == "FAIL")
         review_count = sum(1 for v in verdicts if v.status == "NEEDS_REVIEW")

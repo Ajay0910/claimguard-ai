@@ -16,7 +16,7 @@ def test_financial_math_reconciliation():
     """Verify that the engine uses FinancialMath for strict financial reconciliation."""
     engine = RuleEngine()
     bill = HospitalBill(
-        hospital_name=wrap("Hospital"), patient_name=wrap("Patient"), diagnosis=wrap("Flu"),
+        bill_id=wrap("B1"), hospital_name=wrap("Hospital"), patient_name=wrap("Patient"), policyholder_name=wrap("Patient"), diagnosis=wrap("Flu"),
         line_items=[
             BillLineItem(category=wrap("ROOM"), description=wrap("Room"), quantity=wrap(1), unit_rate=wrap(1500.25), amount=wrap(1500.25)),
             BillLineItem(category=wrap("PHARMACY"), description=wrap("Med"), quantity=wrap(1), unit_rate=wrap(500.50), amount=wrap(500.50))
@@ -25,7 +25,7 @@ def test_financial_math_reconciliation():
     )
     policy = InsurancePolicy(
         policy_number=wrap("P1"), insurer_name=wrap("Insurer"), policyholder_name=wrap("Patient"),
-        policy_start_date=wrap("2020-01-01"), policy_end_date=wrap("2021-01-01"), sum_insured=wrap(500000),
+        policy_start_date=wrap("2020-01-01"), policy_end_date=wrap("2026-01-01"), sum_insured=wrap(500000),
         waiting_periods=[], sub_limits=[]
     )
     rejection = RejectionLetter(
@@ -40,9 +40,10 @@ def test_financial_math_reconciliation():
     # Financial reconciliation should pass if disputed amount > 1.0 is considered mismatch.
     # Here disputed amount = 2000.75 - 2000.00 = 0.75, which is <= 1.0. So it should PASS reconciliation.
     verdicts = result.rule_verdicts
-    recon_verdict = next((v for v in verdicts if v.rule_name == "Final Financial Reconciliation Gate"), None)
+    print("\n".join(f"{v.rule_name}: {v.status}" for v in verdicts))
+    recon_verdict = next((v for v in verdicts if v.rule_name == "Cross-Document Adjudication"), None)
     assert recon_verdict is not None
-    assert recon_verdict.status == "PASS"
+    assert recon_verdict.status == "PASS", f"Failed: {recon_verdict.finding}"
 
 def test_moratorium_enhanced_sum_insured():
     """Verify that enhanced sum insured gets its own 60-month timer."""

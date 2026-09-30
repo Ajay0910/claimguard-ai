@@ -77,19 +77,19 @@ def test_rule_dependency_and_double_deduction():
     assert copay_verdict is not None
     
     # Independent verification of the math:
-    # 1. Prop Deduction happens first OR parallel, but modifies ROOM items.
-    # Total room linked sum = 40000 (Room) + 20000 (Nursing) = 60000.
+    # 1. Room Excess is deducted first (40000 - 20000) = 20000 remaining for room.
+    # Total room linked sum = 20000 (Room) + 20000 (Nursing) = 40000.
     # Actual rate 10000, limit 5000. Ratio = 2.0. Deduction % = 1.0 - (5000/10000) = 50%.
-    # Prop Deduction = 50% of 60000 = 30000.
-    assert "Expected Proportionate Reduction: Rs. 30000" in prop_verdict.finding or "Rs. 30000.00" in prop_verdict.finding
+    # Prop Deduction = 50% of 40000 = 20000.
+    assert "Expected Proportionate Reduction: Rs. 20000" in prop_verdict.finding or "Rs. 20000.00" in prop_verdict.finding
     
-    # 2. Deductible Rule applies to remaining balance (100000 - 30000 = 70000). Deductible = 10000.
-    # Remaining = 60000.
+    # 2. Deductible Rule applies to remaining balance (100000 - 20000 excess - 20000 prop = 60000). Deductible = 10000.
+    # Remaining = 50000.
     assert "Applied deductible of Rs. 10000.0" in deduct_verdict.finding
     
     # 3. Copay Rule (10%) applies to remaining balance AFTER deductibles and prop deductions.
-    # So 10% of 60000 = 6000.
-    assert "Applied 10.0% co-pay (Rs. 6000.00)" in copay_verdict.finding
+    # So 10% of 50000 = 5000.
+    assert "Applied 10.0% co-pay (Rs. 5000.0" in copay_verdict.finding
     
     # This test asserts that the rules dynamically ordered themselves, applied correct math, 
     # and prevented double deduction by using the shared AdjudicationState.
