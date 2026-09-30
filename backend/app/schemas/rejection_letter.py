@@ -11,20 +11,20 @@ class RejectionReason(BaseModel):
 
 class RejectionLetter(BaseModel):
     rejection_id: Optional[Provenance[str]] = None
-    reference_number: Provenance[str]
-    insurer_name: Provenance[str]
+    reference_number: Optional[Provenance[str]] = None
+    insurer_name: Optional[Provenance[str]] = None
     tpa_name: Optional[Provenance[str]] = None
-    policyholder_name: Provenance[str]
-    policy_number: Provenance[str]
-    claim_number: Provenance[str]
-    claim_date: Provenance[str]
-    total_claimed: Provenance[float]
-    total_approved: Provenance[float]
+    policyholder_name: Optional[Provenance[str]] = None
+    policy_number: Optional[Provenance[str]] = None
+    claim_number: Optional[Provenance[str]] = None
+    claim_date: Optional[Provenance[str]] = None
+    total_claimed: Optional[Provenance[float]] = None
+    total_approved: Optional[Provenance[float]] = None
     approved_amount: Provenance[float] = Provenance(value=0.0)
-    total_deducted: Provenance[float]
+    total_deducted: Optional[Provenance[float]] = None
     rejection_reasons: list[RejectionReason] = []
     reasons: list[RejectionReason] = []
-    settlement_type: Provenance[Literal["FULL_REJECTION", "PARTIAL_SETTLEMENT", "FULL_SETTLEMENT"]]
+    settlement_type: Optional[Provenance[Literal["FULL_REJECTION", "PARTIAL_SETTLEMENT", "FULL_SETTLEMENT"]]] = None
     remarks: Optional[Provenance[str]] = None
     extraction_confidence: float = 1.0
 

@@ -66,7 +66,7 @@ def evaluate_cross_document_adjudication(bill: HospitalBill, policy: InsurancePo
             confidence=1.0
         )
     
-    status = "FAIL" if difference > 0 else "PASS"
+    status = "NEEDS_REVIEW" if difference > 0 else "PASS"
     
     return RuleVerdict(finding_type="DOCUMENT_INCONSISTENCY", 
         status=status,

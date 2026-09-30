@@ -1,0 +1,41 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#E8EAE6',
+    'primaryBorderColor': '#393E46',
+    'primaryTextColor': '#222831',
+    'lineColor': '#00ADB5',
+    'actorBkg': '#00ADB5',
+    'actorBorder': '#222831',
+    'actorTextColor': '#EEEEEE',
+    'sequenceNumberColor': '#00ADB5',
+    'fontFamily': 'arial, sans-serif'
+  }
+}}%%
+sequenceDiagram
+    autonumber
+    actor User
+    participant Frontend
+    participant API as Backend API
+    participant Extractor as Gemini VLM
+    participant Engine as Rule Engine
+    participant Ledger as Evidence Ledger
+    participant DB as SQLite DB
+    
+    User->>Frontend: Upload Bill, Policy, Rejection
+    Frontend->>API: POST /api/claims/analyze
+    API->>Extractor: Extract JSON from PDFs
+    Extractor-->>API: Returns Structured Data
+    API->>Ledger: Initialize Ledger
+    API->>Engine: run_all_rules(data, ledger)
+    
+    Engine->>Engine: Run Tier 0 Gates
+    Engine->>Engine: Run Financial Rules
+    Engine->>Ledger: record_calculation()
+    Ledger-->>Engine: evidence_entry
+    Engine-->>API: Returns AnalysisResult
+    
+    API->>API: enforce_evidence_ledger()
+    API->>DB: Save AnalysisRun
+    API-->>Frontend: 200 OK + JSON
+    Frontend-->>User: Display Claim Findings & Appeal

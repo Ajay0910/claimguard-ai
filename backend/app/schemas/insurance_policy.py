@@ -39,15 +39,15 @@ class ProportionateDeductionRuleConfig(BaseModel):
     applicability_conditions: Optional[Provenance[str]] = None
 
 class InsurancePolicy(BaseModel):
-    policy_number: Provenance[str]
-    insurer_name: Provenance[str]
-    policyholder_name: Provenance[str]
+    policy_number: Optional[Provenance[str]] = None
+    insurer_name: Optional[Provenance[str]] = None
+    policyholder_name: Optional[Provenance[str]] = None
     policy_version: Optional[Provenance[str]] = None
     deduction_order_clause: Optional[Provenance[str]] = None
     inception_date: Optional[Provenance[str]] = None
-    policy_start_date: Provenance[str]
-    policy_end_date: Provenance[str]
-    sum_insured: Provenance[float]
+    policy_start_date: Optional[Provenance[str]] = None
+    policy_end_date: Optional[Provenance[str]] = None
+    sum_insured: Optional[Provenance[float]] = None
     room_rent_limit_per_day: Optional[Provenance[float]] = None
     room_category_entitled: Optional[Provenance[str]] = None
     copay_percentage: Provenance[float] = Provenance(value=0.0)
@@ -130,6 +130,8 @@ class InsurancePolicy(BaseModel):
 
     def get_waiting_period_status(self, category: str, claim_date: str) -> dict:
         try:
+            if not self.policy_start_date or not self.policy_start_date.value:
+                return {"expired": False, "remaining_days": -1}
             start = _parse_date(self.policy_start_date.value)
             claim = _parse_date(claim_date)
             days_elapsed = (claim - start).days
@@ -139,5 +141,5 @@ class InsurancePolicy(BaseModel):
                     remaining = max(0, wp.duration_days.value - days_elapsed)
                     return {"expired": remaining == 0, "remaining_days": remaining}
             return {"expired": True, "remaining_days": 0}
-        except ValueError:
+        except Exception:
             return {"expired": False, "remaining_days": -1}

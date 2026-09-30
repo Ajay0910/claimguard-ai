@@ -1,0 +1,43 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#EBF8FF',
+    'primaryBorderColor': '#3182CE',
+    'primaryTextColor': '#2A4365',
+    'lineColor': '#2B6CB0',
+    'fontFamily': 'arial, sans-serif'
+  }
+}}%%
+graph TD
+    classDef actor fill:#ED8936,stroke:#C05621,stroke-width:2px,color:#fff,font-weight:bold;
+    classDef usecase fill:#EBF8FF,stroke:#3182CE,stroke-width:2px,color:#2A4365,rx:10,ry:10;
+    classDef system fill:#F7FAFC,stroke:#A0AEC0,stroke-width:2px,stroke-dasharray: 5 5;
+
+    %% Actors
+    Patient((Patient)):::actor
+    Admin((Claims Admin)):::actor
+    GeminiLLM((Gemini Extractor)):::actor
+    
+    %% Use Cases
+    subgraph ClaimGuard System
+        direction TB
+        SubmitClaim(Submit Claim Documents):::usecase
+        ExtractData(Extract Structured Data):::usecase
+        RunAdjudication(Run Rule Engine Adjudication):::usecase
+        ViewDashboard(View Claims Dashboard):::usecase
+        ViewStatus(View Claim Status & Findings):::usecase
+        GenerateAppeal(Generate Appeal Letter):::usecase
+    end
+    
+    %% Relationships
+    Patient --> SubmitClaim
+    Patient --> ViewStatus
+    Patient --> GenerateAppeal
+    
+    Admin --> ViewDashboard
+    
+    SubmitClaim --> ExtractData
+    ExtractData --> GeminiLLM
+    ExtractData --> RunAdjudication
+    RunAdjudication --> ViewStatus
+    RunAdjudication --> GenerateAppeal

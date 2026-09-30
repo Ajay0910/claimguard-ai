@@ -1,0 +1,40 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#F0F4F8',
+    'primaryBorderColor': '#334E68',
+    'primaryTextColor': '#102A43',
+    'lineColor': '#486581',
+    'fontFamily': 'arial, sans-serif',
+    'edgeLabelBackground':'#F0F4F8',
+    'tertiaryColor': '#D9E2EC'
+  }
+}}%%
+stateDiagram-v2
+    [*] --> UploadDocuments
+    UploadDocuments --> ExtractData : Files Sent to Backend
+    ExtractData --> DataValidation : LLM returns JSON
+    DataValidation --> RunTier0Gates : Structure validated
+    
+    state RunTier0Gates {
+        [*] --> IdentityGate
+        IdentityGate --> ClinicalFirewall : Pass
+        IdentityGate --> Blocked : Fail
+        ClinicalFirewall --> Tier0Complete : Pass
+    }
+    
+    RunTier0Gates --> RunFinancialRules : If Tier0Complete
+    RunTier0Gates --> Finalize : If Blocked
+    
+    state RunFinancialRules {
+        [*] --> ProportionateDeduction
+        ProportionateDeduction --> CrossDocumentAdjudication
+        CrossDocumentAdjudication --> UpdateLedger
+    }
+    
+    RunFinancialRules --> FinancialReconciliation
+    FinancialReconciliation --> GenerateAppeal : If Discrepancy Found
+    FinancialReconciliation --> Finalize : If No Discrepancy
+    GenerateAppeal --> Finalize
+    
+    Finalize --> [*]

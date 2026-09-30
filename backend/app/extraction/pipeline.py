@@ -156,58 +156,11 @@ class ExtractionPipeline:
         doc_type = expected_type or "unknown"
         
         if expected_type == 'HOSPITAL_BILL':
-            dummy_data = HospitalBill(
-                bill_id="SMH/IP/2026/008842",
-                total_amount=180000.0,
-                hospital_name="Sunrise Multispecialty Hospital",
-                patient_name="Mr. Ramesh Kulkarni",
-                line_items=[
-                    BillLineItem(category="ROOM", description="Room Rent - Private AC Room", quantity=3, unit_rate=8000.0, amount=24000.0, is_room_linked=True),
-                    BillLineItem(category="NURSING", description="Nursing Charges", quantity=3, unit_rate=3000.0, amount=9000.0, is_room_linked=True),
-                    BillLineItem(category="CONSULTATION", description="Surgeon Fee", quantity=1, unit_rate=45000.0, amount=45000.0, is_room_linked=False),
-                    BillLineItem(category="OT", description="Operation Theatre Charges", quantity=1, unit_rate=35000.0, amount=35000.0, is_room_linked=False),
-                    BillLineItem(category="PHARMACY", description="Medicines", quantity=1, unit_rate=40000.0, amount=40000.0, is_room_linked=False),
-                    BillLineItem(category="LAB", description="Diagnostics", quantity=1, unit_rate=27000.0, amount=27000.0, is_room_linked=False)
-                ],
-                subtotal=180000.0,
-                net_payable=180000.0,
-                admission_date="2026-03-15T09:40:00Z",
-                discharge_date="2026-03-18T11:15:00Z"
-            )
+            dummy_data = HospitalBill()
         elif expected_type == 'INSURANCE_POLICY':
-            dummy_data = InsurancePolicy(
-                policy_number="SL/HP/2023/4471829",
-                insurer_name="SecureLife Health Insurance Co. Ltd.",
-                policyholder_name="Mr. Ramesh Kulkarni",
-                policy_start_date="2023-01-15T00:00:00Z",
-                policy_end_date="2026-01-14T23:59:59Z",
-                sum_insured=1000000.0,
-                room_rent_limit_per_day=5000.0,
-                room_category_entitled="Single Private A/C Room",
-                copay_percentage=0.0
-            )
+            dummy_data = InsurancePolicy()
         elif expected_type == 'REJECTION_LETTER':
-            dummy_data = RejectionLetter(
-                rejection_id="SL/CLM/2026/0817264",
-                reference_number="SL/CLM/2026/0817264",
-                insurer_name="SecureLife Health Insurance Co. Ltd.",
-                policyholder_name="Mr. Ramesh Kulkarni",
-                policy_number="SL/HP/2023/4471829",
-                claim_number="SL/CLM/2026/0817264",
-                claim_date="2026-03-26T00:00:00Z",
-                total_claimed=180000.0,
-                total_approved=112500.0,
-                total_deducted=67500.0,
-                rejection_reasons=[
-                    RejectionReason(
-                        code="PD01",
-                        category="PROPORTIONATE_DEDUCTION",
-                        description="Proportionate Deduction Applied as per Clause 4.2 (37.5%)",
-                        clause_cited="Clause 4.2"
-                    )
-                ],
-                settlement_type="PARTIAL_SETTLEMENT"
-            )
+            dummy_data = RejectionLetter()
             
         status, issues = self._validate_extraction(doc_type, dummy_data)
         if status != "INSUFFICIENT_EVIDENCE":

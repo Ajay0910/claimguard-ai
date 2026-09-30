@@ -87,11 +87,11 @@ def check_identity_gate(bill: HospitalBill, policy: InsurancePolicy, rejection: 
         # Resolve State
         if len(conflicts) > 0:
             finding_text = (
-                "STATUS = NEEDS_REVIEW\n"
-                "ACTION = PROCEED_WITH_CAUTION\n"
+                "STATUS = BLOCKED\n"
+                "ACTION = STOP_ADJUDICATION\n"
                 "DETAILS:\nIDENTITY_CONFLICT\n" + "\n".join(conflicts)
             )
-            return RuleVerdict(finding_type="IDENTITY_CONFLICT", status="NEEDS_REVIEW", rule_name="Cross-Document Identity Gate", finding=finding_text)
+            return RuleVerdict(finding_type="IDENTITY_CONFLICT", status="BLOCKED", rule_name="Cross-Document Identity Gate", finding=finding_text)
             
         elif evidence_points == 0:
              return RuleVerdict(finding_type="IDENTITY_CONFLICT", 

@@ -1,0 +1,53 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#E6FFFA',
+    'primaryBorderColor': '#319795',
+    'primaryTextColor': '#234E52',
+    'lineColor': '#285E61',
+    'fontFamily': 'arial, sans-serif'
+  }
+}}%%
+classDiagram
+    class HospitalBill {
+        +String bill_id
+        +float total_amount
+        +List~LineItem~ line_items
+    }
+    class InsurancePolicy {
+        +String policy_number
+        +float sum_insured
+        +List~SubLimit~ sub_limits
+    }
+    class RejectionLetter {
+        +String claim_number
+        +float total_approved
+        +float total_deducted
+    }
+    class RuleEngine {
+        +run_all_rules(bill, policy, rejection)
+    }
+    class AnalysisResult {
+        +String overall_status
+        +float total_monetary_impact
+        +List~RuleVerdict~ rule_verdicts
+    }
+    class RuleVerdict {
+        +String rule_name
+        +String status
+        +float confidence
+        +List~EvidenceLedgerEntry~ evidence_entries
+    }
+    class EvidenceLedger {
+        +List~EvidenceLedgerEntry~ entries
+        +record_calculation()
+    }
+    
+    RuleEngine --> HospitalBill : Consumes
+    RuleEngine --> InsurancePolicy : Consumes
+    RuleEngine --> RejectionLetter : Consumes
+    RuleEngine --> EvidenceLedger : Mutates
+    RuleEngine --> AnalysisResult : Produces
+    AnalysisResult "1" *-- "many" RuleVerdict : contains
+    RuleVerdict "1" *-- "many" EvidenceLedgerEntry : tracks
+    EvidenceLedger "1" *-- "many" EvidenceLedgerEntry : stores

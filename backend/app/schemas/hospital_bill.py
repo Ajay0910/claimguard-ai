@@ -5,22 +5,22 @@ from .provenance import Provenance
 
 class BillLineItem(BaseModel):
     item_code: Optional[Provenance[str]] = None
-    description: Provenance[str]
-    category: Provenance[Literal["ROOM", "NURSING", "CONSULTATION", "LAB", "RADIOLOGY", "OT", "PHARMACY", "CONSUMABLES", "MISCELLANEOUS"]]
-    quantity: Provenance[float]
-    unit_rate: Provenance[float]
-    amount: Provenance[float]
+    description: Optional[Provenance[str]] = None
+    category: Optional[Provenance[Literal["ROOM", "NURSING", "CONSULTATION", "LAB", "RADIOLOGY", "OT", "PHARMACY", "CONSUMABLES", "MISCELLANEOUS"]]] = None
+    quantity: Optional[Provenance[float]] = None
+    unit_rate: Optional[Provenance[float]] = None
+    amount: Optional[Provenance[float]] = None
     total: float = 0.0
     is_room_linked: bool = False
 
 class HospitalBill(BaseModel):
     bill_id: Optional[Provenance[str]] = None
     total_amount: Provenance[float] = Provenance(value=0.0)
-    hospital_name: Provenance[str]
+    hospital_name: Optional[Provenance[str]] = None
     hospital_address: Optional[Provenance[str]] = None
     gstin: Optional[Provenance[str]] = None
     uhid: Optional[Provenance[str]] = None
-    patient_name: Provenance[str]
+    patient_name: Optional[Provenance[str]] = None
     patient_age: Optional[Provenance[int]] = None
     patient_gender: Optional[Provenance[str]] = None
     admission_date: Optional[Provenance[str]] = None
@@ -30,18 +30,24 @@ class HospitalBill(BaseModel):
     bed_number: Optional[Provenance[str]] = None
     tpa_or_insurer: Optional[Provenance[str]] = None
     diagnosis: Optional[Provenance[str]] = None
-    line_items: list[BillLineItem]
-    subtotal: Provenance[float]
+    line_items: list[BillLineItem] = []
+    subtotal: Optional[Provenance[float]] = None
     tax_amount: Provenance[float] = Provenance(value=0.0)
     discount: Provenance[float] = Provenance(value=0.0)
-    net_payable: Provenance[float]
+    net_payable: Optional[Provenance[float]] = None
     arithmetic_verified: bool = False
     extraction_confidence: float = 1.0
 
     @model_validator(mode='after')
     def verify_arithmetic(self) -> 'HospitalBill':
-        total = sum(item.amount.value for item in self.line_items)
-        self.arithmetic_verified = abs(total - self.subtotal.value) <= 1.0
+        if not self.line_items or not self.subtotal:
+            self.arithmetic_verified = False
+            return self
+        try:
+            total = sum((item.amount.value if item.amount else 0.0) for item in self.line_items)
+            self.arithmetic_verified = abs(total - self.subtotal.value) <= 1.0
+        except Exception:
+            self.arithmetic_verified = False
         return self
 
     @computed_field

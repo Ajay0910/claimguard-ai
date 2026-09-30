@@ -1,0 +1,10 @@
+---
+name: "Extraction Schema Fragility Rule"
+description: "Rules for defining VLM extraction schemas and handling extraction failures safely."
+---
+
+# Extraction Schema Definition & Error Handling
+
+- When modifying or creating extraction schemas (e.g., Pydantic models for VLM parsing), you must ensure that fields are `Optional` (except perhaps the bare minimum structural identifiers). This ensures that unknown, unseen, or malformed real-world documents missing some fields do not crash the Pydantic parser with `ValidationError`.
+- When handling VLM extraction errors or partial JSON responses, **never** fall back to hardcoded dummy data for real documents. Hardcoded fallback data (e.g., fallback names like "Mr. Ramesh Kulkarni") silently poisons downstream Identity Gates and cross-document reconciliation logic, causing unpredictable `BLOCKED` states instead of a clean `INSUFFICIENT_EVIDENCE` or `NEEDS_REVIEW` escalation.
+- Always instantiate empty objects or `None` during fallback. Ensure all downstream rules (like Identity Gate and Engine) handle `None` values safely using `get_val()` or standard conditionals.
