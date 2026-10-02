@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { IndianRupee, AlertTriangle, FileText, Activity, Percent } from 'lucide-react';
+import { IndianRupee, AlertTriangle, FileText, Activity } from 'lucide-react';
 import MetricCard from '../common/MetricCard';
 
 // INR Currency Formatter Helper
@@ -139,19 +139,10 @@ export function MotionSparklineCurve({
  * 4 Executive Financial KPI Cards Grid
  */
 export default function ExecutiveKpiCards({ stats = {}, claims = [], className = '' }) {
-  const totalRecovered = stats?.total_recovered_amount ?? stats?.total_amount_recovered ?? 1428500;
-  const totalClaims = stats?.total_claims ?? (claims.length > 0 ? claims.length : 128);
-  const mismatchesFound = stats?.mismatches_found ?? 42;
-  const pendingAnalysis = stats?.pending_analysis ?? stats?.pending_claims ?? 14;
-
-  // Disallowance rate: contested disallowance as percentage of total hospital billing
-  const disallowanceRate = '18.4%';
-
-  // Sparkline Trajectory Data Points
-  const recoveredTrend = [28, 42, 59, 74, 98, 122, 142.8]; // in ₹10,000s
-  const auditTrend = [24, 21, 19, 18, 17, 15, 14]; // active audits backlog
-  const processedTrend = [68, 79, 92, 104, 114, 122, 128]; // cumulative throughput
-  const disallowanceTrend = [24.2, 22.8, 21.5, 20.2, 19.4, 18.9, 18.4]; // declining disallowances
+  const totalRecovered = stats?.total_recovered_amount ?? stats?.total_amount_recovered ?? null;
+  const totalClaims = stats?.total_claims ?? (claims.length > 0 ? claims.length : null);
+  const mismatchesFound = stats?.mismatches_found ?? null;
+  const pendingAnalysis = stats?.pending_analysis ?? stats?.pending_claims ?? null;
 
   return (
     <motion.div
@@ -164,14 +155,10 @@ export default function ExecutiveKpiCards({ stats = {}, claims = [], className =
       <motion.div variants={cardItemVariants} className="hover:scale-101 active:scale-[0.98] transition-transform">
         <MetricCard
           label="Total Recovered Amount"
-          value={formatInr(totalRecovered)}
+          value={totalRecovered == null ? 'Unavailable' : formatInr(totalRecovered)}
           icon={IndianRupee}
           variant="emerald"
-          variance={{ value: '+14.2%', isPositive: true, label: 'recovery velocity' }}
-          metaText="Velocity: ₹47.6K / day"
-          sparkline={recoveredTrend}
-          sparklineColor="emerald"
-          tooltip="Aggregate underpayments recovered across audited hospital bills and wrongful TPA deductions."
+          tooltip="Aggregate amount reported by the backend analysis records."
         />
       </motion.div>
 
@@ -179,17 +166,10 @@ export default function ExecutiveKpiCards({ stats = {}, claims = [], className =
       <motion.div variants={cardItemVariants} className="hover:scale-101 active:scale-[0.98] transition-transform">
         <MetricCard
           label="Flagged / Discrepancies"
-          value={mismatchesFound}
+          value={mismatchesFound == null ? 'Unavailable' : mismatchesFound}
           icon={AlertTriangle}
           variant="rose"
-          badges={[
-            { label: `${mismatchesFound} Flagged`, variant: 'rose' },
-            { label: `${pendingAnalysis} In Review`, variant: 'amber' },
-          ]}
-          metaText="Discrepancy: ₹2.14L in dispute"
-          sparkline={auditTrend}
-          sparklineColor="rose"
-          tooltip="Claims with detected IRDAI clause conflicts, room rent caps, or pending forensic review."
+          tooltip="Mismatch count reported by the backend."
         />
       </motion.div>
 
@@ -197,30 +177,21 @@ export default function ExecutiveKpiCards({ stats = {}, claims = [], className =
       <motion.div variants={cardItemVariants} className="hover:scale-101 active:scale-[0.98] transition-transform">
         <MetricCard
           label="Total Processed Claims"
-          value={totalClaims.toLocaleString('en-IN')}
+          value={totalClaims == null ? 'Unavailable' : totalClaims.toLocaleString('en-IN')}
           icon={FileText}
           variant="primary"
-          variance={{ value: '+18.0%', isPositive: true, label: 'throughput' }}
-          metaText="Auto-audit rate: 94.2%"
-          sparkline={processedTrend}
-          sparklineColor="brand"
-          tooltip="Total claim dossiers ingested and evaluated through the ClaimGuard VLM & Statutory Rule Engine."
+          tooltip="Claim count reported by the backend."
         />
       </motion.div>
 
-      {/* 4. Disallowance Rate (%) */}
+      {/* 4. Pending Analysis */}
       <motion.div variants={cardItemVariants} className="hover:scale-101 active:scale-[0.98] transition-transform">
         <MetricCard
-          label="Disallowance Rate"
-          value={disallowanceRate}
-          icon={Percent}
+          label="Pending Analysis"
+          value={pendingAnalysis == null ? 'Unavailable' : pendingAnalysis}
+          icon={Activity}
           variant="amber"
-          targetPill={{ label: 'IRDAI Benchmark: ≤ 12.0%', status: 'warning' }}
-          variance={{ value: '-3.6%', isPositive: true, label: 'improvement' }}
-          metaText="Targeting ≤ 12% standard"
-          sparkline={disallowanceTrend}
-          sparklineColor="amber"
-          tooltip="Percentage of billed hospital amount contested or deducted by TPAs/insurers prior to appeal audit."
+          tooltip="Claims awaiting analysis, as reported by the backend."
         />
       </motion.div>
     </motion.div>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Search, ChevronRight, Shield, Activity, Building2 } from 'lucide-react';
+import { Search, ChevronRight, Shield, Building2 } from 'lucide-react';
 import { healthCheck } from '../../services/api';
-import { mockAuditor, mockTenant, mockClaims } from '../../services/mockData';
 
 export default function Topbar({ onSearch = null }) {
   const navigate = useNavigate();
@@ -48,12 +47,8 @@ export default function Topbar({ onSearch = null }) {
     const q = searchQuery.trim().toUpperCase();
     if (!q) return;
 
-    // Search for match in mock or navigate
-    const found = mockClaims.find(
-      c => c.id.toUpperCase() === q || c.patient_name.toUpperCase().includes(q)
-    );
-    if (found) {
-      navigate(`/analysis/${found.id}`);
+    if (typeof onSearch === 'function') {
+      onSearch(searchQuery);
     } else if (q.startsWith('CLM-') || q.startsWith('CLM')) {
       navigate(`/analysis/${q}`);
     } else {
@@ -119,67 +114,52 @@ export default function Topbar({ onSearch = null }) {
           </div>
         </form>
 
-        {/* Quick search suggestions dropdown */}
+        {/* Search guidance */}
         {searchFocused && searchQuery.trim().length > 0 && (
           <div className="absolute top-full mt-1.5 left-0 right-0 bg-white rounded-xl shadow-elevation border border-slate-200 py-2 z-50 text-xs">
             <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              Quick Claims
+              Search
             </div>
-            {mockClaims
-              .filter(c => c.id.toLowerCase().includes(searchQuery.toLowerCase()) || c.patient_name.toLowerCase().includes(searchQuery.toLowerCase()))
-              .slice(0, 4)
-              .map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => navigate(`/analysis/${c.id}`)}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between transition-colors"
-                >
-                  <div>
-                    <span className="font-semibold text-brand-700 font-financial mr-2">{c.id}</span>
-                    <span className="text-slate-600">{c.patient_name}</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">{c.hospital}</span>
-                </button>
-              ))}
+            <p className="px-3 py-2 text-slate-600">Press Enter to search the current claims list.</p>
           </div>
         )}
       </div>
 
-      {/* Right: Tenant Context, API Health & Auditor Persona */}
+      {/* Workspace and API Health */}
       <div className="flex items-center gap-4">
-        {/* Facility Context Badge */}
+        {/* Workspace Badge */}
         <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100/80 border border-slate-200 text-xs">
           <Building2 className="w-3.5 h-3.5 text-slate-500" />
-          <span className="font-medium text-slate-700 truncate max-w-[170px]" title={mockTenant.facility_name}>
-            {mockTenant.facility_name}
+          <span className="font-medium text-slate-700 truncate max-w-[170px]">
+            ClaimGuard Workspace
           </span>
           <span className="text-[10px] bg-white text-slate-600 px-1.5 py-0.5 rounded font-semibold border border-slate-200">
-            TPA Desk
+            Claims
           </span>
         </div>
 
         {/* Live Backend Indicator */}
         <div
           className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border"
-          title={apiOnline ? 'FastAPI Backend Online (Connected)' : 'Local Demo Mode (Mock Fallback Active)'}
+          title={apiOnline ? 'Backend connected' : 'Backend unavailable; live data cannot be loaded'}
         >
           <span className={`w-2 h-2 rounded-full ${apiOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
           <span className="text-[11px] text-slate-600 hidden sm:inline">
-            {apiOnline ? 'API Online' : 'Demo Mode'}
+            {apiOnline ? 'API Online' : 'API Offline'}
           </span>
         </div>
 
-        {/* Auditor Profile */}
+        {/* Workspace Icon */}
         <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
           <div className="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center font-semibold text-xs shadow-xs border border-brand-700">
-            {mockAuditor.avatar_initials}
+            <Shield className="h-4 w-4" />
           </div>
           <div className="hidden lg:block text-left">
             <div className="text-xs font-bold text-slate-800 leading-tight">
-              {mockAuditor.name}
+              ClaimGuard
             </div>
             <div className="text-[11px] text-slate-500 leading-tight">
-              {mockAuditor.title}
+              Claims review
             </div>
           </div>
         </div>

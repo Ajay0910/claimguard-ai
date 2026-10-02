@@ -31,7 +31,7 @@ const DOC_SLOTS = [
     label: 'Rejection / Settlement Letter',
     description: "Your insurer's rejection or partial settlement letter",
     icon: FileSearch,
-    required: false,
+    required: true,
     color: 'amber',
   },
 ]
@@ -111,6 +111,7 @@ function FileDropzone({ slot, file, onFile, onRemove }) {
 
 export default function SubmitPage() {
   const navigate = useNavigate()
+  const submissionSecretRef = useRef(sessionStorage.getItem('claimguard-pending-submission-secret'))
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
 
@@ -118,11 +119,16 @@ export default function SubmitPage() {
   const [files, setFiles] = useState({ hospital_bill: null, insurance_policy: null, rejection_letter: null })
 
   const canProceedStep0 = details.name.trim().length >= 2 && details.email.includes('@')
-  const canProceedStep1 = files.hospital_bill && files.insurance_policy
+  const canProceedStep1 = files.hospital_bill && files.insurance_policy && files.rejection_letter
 
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
+      if (!submissionSecretRef.current) {
+        const bytes = crypto.getRandomValues(new Uint8Array(32))
+        submissionSecretRef.current = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        sessionStorage.setItem('claimguard-pending-submission-secret', submissionSecretRef.current)
+      }
       const form = new FormData()
       form.append('patient_name', details.name)
       form.append('patient_email', details.email)
@@ -132,14 +138,20 @@ export default function SubmitPage() {
       if (files.rejection_letter) form.append('rejection_letter', files.rejection_letter)
 
       const baseUrl = import.meta.env.VITE_API_URL || '';
-      const res = await fetch(`${baseUrl}/api/portal/submit`, { method: 'POST', body: form })
+      const res = await fetch(`${baseUrl}/api/portal/submit`, {
+        method: 'POST',
+        headers: { 'X-Portal-Secret': submissionSecretRef.current },
+        body: form,
+      })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.detail || 'Submission failed')
       }
       const data = await res.json()
+      sessionStorage.removeItem('claimguard-pending-submission-secret')
       toast.success('Documents submitted!', { description: 'Analysis is starting. You will see live updates.' })
-      navigate(`/track/${data.claim_id}`)
+      sessionStorage.setItem(`claimguard-portal-secret:${data.claim_id}`, data.portal_secret)
+      navigate(`/track/${data.claim_id}`, { state: { portalSecret: data.portal_secret } })
     } catch (err) {
       toast.error('Submission failed', { description: err.message })
     } finally {

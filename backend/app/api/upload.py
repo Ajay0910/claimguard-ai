@@ -7,12 +7,13 @@ import os
 from datetime import datetime
 
 from ..database import get_db
-from ..models.claim import Claim, Document
+from ..models.claim import Claim, Document, AnalysisRun
 from ..utils.file_handler import save_upload
 from ..utils.audit_trail import AuditTrail
 from ..config import settings
+from ..security.auth import require_staff_access
 
-router = APIRouter(prefix='/api', tags=['upload'])
+router = APIRouter(prefix='/api', tags=['upload'], dependencies=[Depends(require_staff_access)])
 
 @router.post('/upload')
 async def upload_document(
@@ -40,8 +41,8 @@ async def upload_document(
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
-    if file_size > 25 * 1024 * 1024:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File too large (max 25MB)")
+    if file_size > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"File too large (max {settings.MAX_UPLOAD_SIZE_MB}MB)")
     
     if not claim_id:
         claim_id = str(uuid.uuid4())
@@ -63,7 +64,20 @@ async def upload_document(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Claim not found")
 
     upload_dir = settings.UPLOAD_DIR if hasattr(settings, 'UPLOAD_DIR') else os.path.join("data", "uploads")
-    file_path, mime_type, size_bytes, doc_hash = await save_upload(file, upload_dir)
+    try:
+        file_path, mime_type, size_bytes, doc_hash = await save_upload(
+            file,
+            upload_dir,
+            max_size_mb=settings.MAX_UPLOAD_SIZE_MB,
+            allowed_mime_types=set(settings.ALLOWED_MIME_TYPES),
+            stored_filename=f"{uuid.uuid4().hex}.upload",
+            validate_content=True,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if file.content_type and mime_type != file.content_type:
+        os.remove(file_path)
+        raise HTTPException(status_code=400, detail="File content does not match its declared type.")
 
     document_id = str(uuid.uuid4())
     new_doc = Document(
@@ -86,7 +100,15 @@ async def upload_document(
         "file_size_bytes": size_bytes
     })
     
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        raise
     
     return {
         "claim_id": claim_id,
@@ -122,6 +144,10 @@ async def list_documents(claim_id: str, db: AsyncSession = Depends(get_db)) -> l
 async def list_claims(db: AsyncSession = Depends(get_db)) -> list[dict]:
     result = await db.execute(select(Claim))
     claims = result.scalars().all()
+    run_result = await db.execute(select(AnalysisRun).order_by(AnalysisRun.started_at.desc()))
+    latest_runs = {}
+    for run in run_result.scalars().all():
+        latest_runs.setdefault(run.claim_id, run)
     return [
         {
             "id": claim.id,
@@ -131,6 +157,12 @@ async def list_claims(db: AsyncSession = Depends(get_db)) -> list[dict]:
             "policy_number": claim.policy_number,
             "claim_number": claim.claim_number,
             "status": claim.status,
+            "overall_status": latest_runs[claim.id].overall_status if claim.id in latest_runs else None,
+            "total_monetary_impact": (
+                latest_runs[claim.id].total_monetary_impact
+                if claim.id in latest_runs and latest_runs[claim.id].overall_status in {"MISMATCH_DETECTED", "NO_MISMATCH_FOUND"}
+                else None
+            ),
             "updated_at": claim.updated_at.isoformat() if claim.updated_at else None
         }
         for claim in claims
@@ -147,11 +179,17 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(func.count(Claim.id)).where(Claim.status.in_(['PENDING', 'ANALYZING'])))
     pending_analysis = result.scalar() or 0
     
-    result = await db.execute(select(func.count(AnalysisRun.id)).where(AnalysisRun.overall_status == 'FAIL'))
+    result = await db.execute(select(func.count(AnalysisRun.id)).where(AnalysisRun.overall_status == 'MISMATCH_DETECTED'))
     mismatches_found = result.scalar() or 0
     
-    result = await db.execute(select(func.sum(AnalysisRun.total_monetary_impact)))
-    total_recovered_amount = float(result.scalar() or 0.0)
+    result = await db.execute(
+        select(func.sum(AnalysisRun.total_monetary_impact)).where(
+            AnalysisRun.overall_status.in_(["MISMATCH_DETECTED", "NO_MISMATCH_FOUND"])
+        )
+    )
+    total_recovered_amount = result.scalar()
+    if total_recovered_amount is not None:
+        total_recovered_amount = float(total_recovered_amount)
     
     return {
         "total_claims": total_claims,

@@ -1,14 +1,6 @@
 import axios from 'axios';
-import {
-  mockStats,
-  mockClaims,
-  mockAnalysisResult,
-  mockAppealDraft,
-  mockAuditTrail,
-} from './mockData.js';
-
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
+  baseURL: import.meta.env?.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
   timeout: 10000,
 });
 
@@ -18,105 +10,84 @@ const api = axios.create({
 
 export const normalizeStats = (backendStats) => {
   const s = backendStats || {};
-  const totalRecovered = s.total_recovered_amount ?? s.total_amount_recovered ?? mockStats.total_recovered_amount;
-  const pending = s.pending_analysis ?? s.pending_claims ?? mockStats.pending_analysis;
+  const totalRecovered = s.total_recovered_amount ?? s.total_amount_recovered ?? null;
+  const pending = s.pending_analysis ?? s.pending_claims ?? 0;
   
   return {
-    total_claims: s.total_claims ?? mockStats.total_claims,
+    total_claims: s.total_claims ?? 0,
     pending_analysis: pending,
     pending_claims: pending, // Backward-compat for Dashboard.jsx:36
-    mismatches_found: s.mismatches_found ?? mockStats.mismatches_found,
+    mismatches_found: s.mismatches_found ?? 0,
     total_recovered_amount: totalRecovered,
     total_amount_recovered: totalRecovered, // Backward-compat for Dashboard.jsx:35
   };
 };
 
 export const normalizeClaims = (rawClaims) => {
-  if (!Array.isArray(rawClaims) || rawClaims.length === 0) {
-    return mockClaims;
-  }
-  const filtered = rawClaims.filter(Boolean);
-  const target = filtered.length > 0 ? filtered : rawClaims.map(c => c || {});
-  return target.map((claim, idx) => {
+  if (!Array.isArray(rawClaims)) return [];
+  return rawClaims.filter(Boolean).map((claim) => {
     const safeClaim = claim || {};
-    const mockMatch = mockClaims.find(m => m.id === safeClaim.id) || mockClaims[idx % mockClaims.length];
     return {
-      id: safeClaim.id || mockMatch?.id || `CLM-GEN-${idx}`,
-      patient_name: safeClaim.patient_name || safeClaim.patient || mockMatch?.patient_name || 'Patient Unknown',
-      patient: safeClaim.patient_name || safeClaim.patient || mockMatch?.patient_name || 'Patient Unknown',
-      policy_number: safeClaim.policy_number || mockMatch?.policy_number || 'POL-SAMPLE',
-      claim_number: safeClaim.claim_number || safeClaim.id || mockMatch?.claim_number || mockMatch?.id,
-      status: safeClaim.status || 'COMPLETED',
-      docs: safeClaim.docs ?? safeClaim.documents_count ?? mockMatch?.docs ?? 3,
-      documents_count: safeClaim.docs ?? safeClaim.documents_count ?? mockMatch?.docs ?? 3,
-      impact: safeClaim.impact ?? safeClaim.monetary_impact ?? mockMatch?.impact ?? 0,
-      monetary_impact: safeClaim.impact ?? safeClaim.monetary_impact ?? mockMatch?.impact ?? 0,
-      created_at: safeClaim.created_at || safeClaim.updated_at || mockMatch?.created_at || new Date().toISOString(),
-      updated_at: safeClaim.updated_at || safeClaim.created_at || mockMatch?.updated_at || new Date().toISOString(),
-      date: safeClaim.date || (safeClaim.created_at ? new Date(safeClaim.created_at).toLocaleDateString() : mockMatch?.date),
-      hospital: safeClaim.hospital || mockMatch?.hospital || 'Multi-Specialty Hospital',
-      deduction_type: safeClaim.deduction_type || mockMatch?.deduction_type || 'Audit Evaluation',
-      documents_status: safeClaim.documents_status || mockMatch?.documents_status || { bill: true, policy: true, rejection: true },
+      ...safeClaim,
+      patient_name: safeClaim.patient_name ?? safeClaim.patient ?? null,
+      patient: safeClaim.patient_name ?? safeClaim.patient ?? null,
+      policy_number: safeClaim.policy_number ?? null,
+      claim_number: safeClaim.claim_number ?? safeClaim.id ?? null,
+      status: safeClaim.status ?? 'PENDING',
+      docs: safeClaim.docs ?? safeClaim.documents_count ?? null,
+      documents_count: safeClaim.docs ?? safeClaim.documents_count ?? null,
+      impact: safeClaim.total_monetary_impact ?? safeClaim.impact ?? safeClaim.monetary_impact ?? null,
+      monetary_impact: safeClaim.total_monetary_impact ?? safeClaim.impact ?? safeClaim.monetary_impact ?? null,
+      created_at: safeClaim.created_at ?? safeClaim.updated_at ?? null,
+      updated_at: safeClaim.updated_at ?? safeClaim.created_at ?? null,
+      date: safeClaim.date ?? (safeClaim.created_at ? new Date(safeClaim.created_at).toLocaleDateString() : null),
     };
   });
 };
 
-export const normalizeAnalysisResult = (data, claimId = 'CLM-DEMO') => {
-  if (!data) {
-    return {
-      ...mockAnalysisResult,
-      claim_id: claimId,
-      rule_verdicts: mockAnalysisResult.rule_verdicts.map(v => ({ ...v })),
-      forensics: { ...mockAnalysisResult.forensics },
-    };
-  }
+export const normalizeAnalysisResult = (data, claimId = null) => {
+  if (!data) return null;
   
   // Unwrap nested backend payload { analysis_run_id, status, result: { ... } }
   const core = (data && data.result) ? data.result : (data || {});
   
   return {
-    ...mockAnalysisResult,
     ...core,
-    claim_id: claimId || core.claim_id || data.claim_id || mockAnalysisResult.claim_id,
-    analysis_run_id: data.analysis_run_id || core.analysis_run_id || mockAnalysisResult.analysis_run_id,
-    status: data.status || core.status || 'COMPLETED',
-    overall_status: core.overall_status || mockAnalysisResult.overall_status,
-    total_monetary_impact: core.total_monetary_impact ?? mockAnalysisResult.total_monetary_impact,
-    tier1_issues: core.tier1_issues ?? mockAnalysisResult.tier1_issues,
-    tier2_flags: core.tier2_flags ?? mockAnalysisResult.tier2_flags,
-    summary: core.summary || mockAnalysisResult.summary,
+    claim_id: claimId ?? core.claim_id ?? data.claim_id ?? null,
+    analysis_run_id: data.analysis_run_id ?? core.analysis_run_id ?? null,
+    status: data.status ?? core.status ?? null,
+    overall_status: core.overall_status ?? null,
+    total_monetary_impact: core.total_monetary_impact ?? null,
+    tier1_issues: core.tier1_issues ?? null,
+    tier2_flags: core.tier2_flags ?? null,
+    summary: core.summary ?? null,
     rule_verdicts: Array.isArray(core.rule_verdicts)
       ? core.rule_verdicts.map(v => ({ ...v }))
-      : mockAnalysisResult.rule_verdicts.map(v => ({ ...v })),
-    forensics: core.forensics || mockAnalysisResult.forensics,
-    confidence_score: core.confidence_score ?? mockAnalysisResult.confidence_score,
-    total_insurer_calculation: core.total_insurer_calculation ?? mockAnalysisResult.total_insurer_calculation,
-    total_correct_calculation: core.total_correct_calculation ?? mockAnalysisResult.total_correct_calculation,
+      : [],
+    forensics: core.forensics ?? null,
+    confidence_score: core.confidence_score ?? null,
+    total_insurer_calculation: core.total_insurer_calculation ?? null,
+    total_correct_calculation: core.total_correct_calculation ?? null,
   };
 };
 
 export const normalizeAppealDraft = (data) => {
-  if (!data) {
-    return {
-      ...mockAppealDraft,
-      content: mockAppealDraft.appeal_text,
-      appeal_letter: mockAppealDraft.appeal_text,
-    };
-  }
+  if (!data) return null;
   const text = typeof data.appeal_text === 'string'
     ? data.appeal_text
-    : (data.appeal_letter || data.content || data.draft || mockAppealDraft.appeal_text);
+    : (data.appeal_letter || data.content || data.draft || null);
+  if (!text || !text.trim()) return null;
   return {
     appeal_text: text,
     content: text, // Backward-compat for Analysis.jsx:63
     appeal_letter: text,
-    regulatory_citations: data.regulatory_citations || mockAppealDraft.regulatory_citations,
-    monetary_impact: data.monetary_impact ?? mockAppealDraft.monetary_impact,
+    regulatory_citations: data.regulatory_citations ?? [],
+    monetary_impact: data.monetary_impact ?? null,
   };
 };
 
 // ==========================================
-// API Operations with Resilient Fallbacks
+// API operations return backend data or surface the request error to the view.
 // ==========================================
 
 export const uploadDocument = async (file, documentType, claimId = null) => {
@@ -130,13 +101,7 @@ export const uploadDocument = async (file, documentType, claimId = null) => {
     const response = await api.post('/upload', formData);
     return response.data;
   } catch (error) {
-    console.warn('API /upload error, using client-simulated response:', error.message);
-    return {
-      claim_id: claimId || `CLM-${Math.floor(10000 + Math.random() * 90000)}`,
-      document_id: `DOC-${Date.now()}`,
-      filename: file.name,
-      status: 'success',
-    };
+    throw error;
   }
 };
 
@@ -145,8 +110,7 @@ export const triggerAnalysis = async (claimId) => {
     const response = await api.post(`/analyze/${claimId}`);
     return response.data;
   } catch (error) {
-    console.warn('API triggerAnalysis error, using fallback:', error.message);
-    return { analysis_run_id: `RUN-${Date.now()}`, status: 'RUNNING' };
+    throw error;
   }
 };
 
@@ -155,7 +119,7 @@ export const getAnalysisStatus = async (claimId) => {
     const response = await api.get(`/analyze/${claimId}/status`);
     return response.data;
   } catch (error) {
-    return { analysis_run_id: `RUN-${claimId}`, status: 'COMPLETED', started_at: new Date().toISOString() };
+    throw error;
   }
 };
 
@@ -164,8 +128,7 @@ export const getAnalysisResult = async (claimId) => {
     const response = await api.get(`/analyze/${claimId}/result`);
     return normalizeAnalysisResult(response.data, claimId);
   } catch (error) {
-    console.warn('API /analyze result fallback for claim:', claimId);
-    return normalizeAnalysisResult(null, claimId);
+    throw error;
   }
 };
 
@@ -174,7 +137,7 @@ export const getReport = async (claimId) => {
     const response = await api.get(`/reports/${claimId}`);
     return response.data;
   } catch (error) {
-    return { claim_id: claimId, report_data: mockAnalysisResult, overall_status: 'MISMATCH_DETECTED' };
+    throw error;
   }
 };
 
@@ -183,7 +146,7 @@ export const getAppealDraft = async (claimId) => {
     const response = await api.get(`/reports/${claimId}/appeal`);
     return normalizeAppealDraft(response.data);
   } catch (error) {
-    return normalizeAppealDraft(null);
+    throw error;
   }
 };
 
@@ -192,7 +155,7 @@ export const getAuditTrail = async (claimId) => {
     const response = await api.get(`/reports/${claimId}/audit-trail`);
     return response.data;
   } catch (error) {
-    return { ...mockAuditTrail, claim_id: claimId };
+    throw error;
   }
 };
 
@@ -219,8 +182,7 @@ export const getClaims = async () => {
     const response = await api.get('/claims');
     return normalizeClaims(response.data);
   } catch (error) {
-    console.warn('API /claims error, falling back to mock claims:', error.message);
-    return mockClaims;
+    throw error;
   }
 };
 
@@ -229,8 +191,7 @@ export const getStats = async () => {
     const response = await api.get('/stats');
     return normalizeStats(response.data);
   } catch (error) {
-    console.warn('API /stats error, falling back to mock stats:', error.message);
-    return mockStats;
+    throw error;
   }
 };
 

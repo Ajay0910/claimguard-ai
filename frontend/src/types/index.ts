@@ -3,9 +3,11 @@
 // ==========================================
 
 export type ClaimStatus = 
+  | 'QUEUED'
   | 'PENDING' 
   | 'EXTRACTING' 
   | 'ANALYZING' 
+  | 'REVIEW_RECOMMENDED'
   | 'COMPLETED' 
   | 'FAILED';
 
@@ -25,7 +27,7 @@ export interface DocumentRecord {
   created_at: string;
   extracted_data?: HospitalBill | InsurancePolicy | RejectionLetter | null;
   extraction_confidence?: number;
-  extraction_method?: 'vlm' | 'ocr';
+  extraction_method?: 'vlm' | 'ocr' | 'none';
 }
 
 export interface Claim {
@@ -195,6 +197,9 @@ export type VerdictStatus =
   | 'FAIL' 
   | 'SKIPPED' 
   | 'NEEDS_REVIEW' 
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'CONFLICT'
+  | 'BLOCKED'
   | 'WARNING';
 
 export interface RuleVerdict {
@@ -214,7 +219,9 @@ export type OverallStatus =
   | 'NO_MISMATCH_FOUND' 
   | 'MISMATCH_DETECTED' 
   | 'REVIEW_RECOMMENDED' 
-  | 'EXTRACTION_FAILED';
+  | 'EXTRACTION_FAILED'
+  | 'BLOCKED'
+  | 'INSUFFICIENT_EVIDENCE';
 
 export interface AnalysisResult {
   claim_id: string;
@@ -238,7 +245,7 @@ export interface AnalysisResult {
 // 6. Forensics Models
 // ==========================================
 
-export type ELAAssessment = 'CLEAN' | 'SUSPICIOUS' | 'HIGHLY_SUSPICIOUS';
+export type ELAAssessment = 'CLEAN' | 'SUSPICIOUS' | 'HIGHLY_SUSPICIOUS' | 'NOT_ANALYZED';
 
 export interface ELAResult {
   tamper_score: number;

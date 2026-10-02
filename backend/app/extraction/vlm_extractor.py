@@ -8,11 +8,11 @@ from ..schemas.rejection_letter import RejectionLetter
 from .prompts import BILL_EXTRACTION_PROMPT, POLICY_EXTRACTION_PROMPT, REJECTION_EXTRACTION_PROMPT
 
 class VLMExtractor:
-    def __init__(self, provider: str, api_key: str):
+    def __init__(self, provider: str, api_key: str, model: str = None):
         self.provider = provider.lower()
         self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o")
         self.anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+        self.gemini_model = model or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
         
         if self.provider == 'anthropic':
             import anthropic
@@ -32,9 +32,23 @@ class VLMExtractor:
             return 'image/png' # Assuming upstream converted it to PNG bytes already
         return mime_type
 
+    @staticmethod
+    def _image_list(image_bytes: Union[bytes, list[bytes]]) -> list[bytes]:
+        return image_bytes if isinstance(image_bytes, list) else [image_bytes]
+
     def _extract_anthropic(self, image_bytes: bytes, mime_type: str, system_prompt: str, schema_class: Any, tool_name: str) -> Any:
         mime_type = self._fix_mime_type(mime_type)
-        b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        image_content = [
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": mime_type,
+                    "data": base64.b64encode(page).decode("utf-8"),
+                },
+            }
+            for page in self._image_list(image_bytes)
+        ]
         
         schema = schema_class.model_json_schema()
         
@@ -51,15 +65,7 @@ class VLMExtractor:
             messages=[
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": mime_type,
-                                "data": b64_image
-                            }
-                        },
+                    "content": image_content + [
                         {
                             "type": "text",
                             "text": "Extract the requested information from this document."
@@ -79,7 +85,15 @@ class VLMExtractor:
 
     def _extract_openai(self, image_bytes: bytes, mime_type: str, system_prompt: str, schema_class: Any) -> Any:
         mime_type = self._fix_mime_type(mime_type)
-        b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        image_content = [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{base64.b64encode(page).decode('utf-8')}"
+                },
+            }
+            for page in self._image_list(image_bytes)
+        ]
         
         response = self.client.beta.chat.completions.parse(
             model=self.openai_model,
@@ -90,13 +104,7 @@ class VLMExtractor:
                 },
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{b64_image}"
-                            }
-                        },
+                    "content": image_content + [
                         {
                             "type": "text",
                             "text": "Extract the requested information from this document."
@@ -117,14 +125,14 @@ class VLMExtractor:
             generation_config={"response_mime_type": "application/json"}
         )
         
-        img = {
-            "mime_type": mime_type,
-            "data": image_bytes
-        }
+        images = [
+            {"mime_type": mime_type, "data": page}
+            for page in self._image_list(image_bytes)
+        ]
         
         schema_json = json.dumps(schema_class.model_json_schema())
         prompt_text = f"Extract the requested information from this document. Return ONLY valid JSON matching this exact JSON schema (do not hallucinate fields, ensure required fields are present):\n{schema_json}"
-        response = model.generate_content([img, prompt_text])
+        response = model.generate_content([*images, prompt_text])
         
         data = json.loads(response.text)
         return schema_class.model_validate(data)

@@ -2,7 +2,11 @@ PROVENANCE_INSTRUCTION = """
 CRITICAL REQUIREMENT - EVIDENCE PROVENANCE:
 Every extracted field must be returned as a nested object. It should map the required keys according to the schema (e.g. value, context, source_document_id).
 - "value": The actual extracted value (e.g., 5000, "John Doe", true).
-- "context": The exact page number and text snippet proving the value (e.g., "Page 1 - Room Rent: Rs 5000").
+- "page": The 1-based page number where the value appears.
+- "source_text": A short verbatim text snippet from the document that contains the value.
+- "extraction_confidence": A field-specific confidence score from 0.0 to 1.0.
+- "context": A concise explanation referencing the source page and snippet.
+Never invent page numbers, source text, or confidence. If you cannot cite the value from the document, leave it unavailable.
 Do not output flat numbers or strings for any field defined as a Provenance object in the schema.
 """
 

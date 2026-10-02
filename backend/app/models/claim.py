@@ -14,7 +14,8 @@ class Claim(Base):
     patient_name: Mapped[str] = mapped_column(String)
     patient_email: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     patient_phone: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    portal_token: Mapped[Optional[str]] = mapped_column(String, nullable=True, default=lambda: str(uuid.uuid4()))
+    # SHA-256 digest of the one-time patient portal secret; never store plaintext.
+    portal_token: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
     policy_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     claim_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[str] = mapped_column(String)  # Enum: PENDING, EXTRACTING, ANALYZING, COMPLETED, FAILED
@@ -54,7 +55,7 @@ class AnalysisRun(Base):
     result_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     forensics_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     overall_status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    total_monetary_impact: Mapped[float] = mapped_column(default=0.0)
+    total_monetary_impact: Mapped[Optional[float]] = mapped_column(nullable=True)
     started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 

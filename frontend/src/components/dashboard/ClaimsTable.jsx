@@ -87,7 +87,7 @@ export const matchesStatusTab = (claim, tabKey) => {
   if (!claim) return false;
   if (!tabKey || tabKey === 'ALL') return true;
 
-  const status = (claim.status || '').toUpperCase().trim();
+  const status = (claim.overall_status || claim.status || '').toUpperCase().trim();
   const impact = Number(claim.monetary_impact ?? claim.impact ?? 0);
   const deduction = (claim.deduction_type || '').toLowerCase();
   const normalizedTab = tabKey.toUpperCase().trim();
@@ -97,23 +97,27 @@ export const matchesStatusTab = (claim, tabKey) => {
     case 'MISMATCH':
       return (
         ['FAIL', 'FAILED', 'MISMATCH_DETECTED', 'HIGH_RISK', 'TAMPERED', 'REJECTED', 'SUSPICIOUS'].includes(status) ||
-        (impact > 0 && !['PENDING', 'ANALYZING', 'RUNNING', 'EXTRACTING'].includes(status))
+        (impact > 0 && !['PENDING', 'QUEUED', 'ANALYZING', 'RUNNING', 'EXTRACTING'].includes(status))
       );
 
     case 'APPROVED':
     case 'COMPLETED':
       return (
         ['PASS', 'APPROVED', 'CLEAN', 'NO_MISMATCH_FOUND', 'VERIFIED'].includes(status) ||
-        (status === 'COMPLETED' && impact === 0)
+        (status === 'COMPLETED' && claim.overall_status === 'NO_MISMATCH_FOUND')
       );
 
     case 'REVIEW':
     case 'PENDING':
       return [
         'REVIEW_RECOMMENDED',
+        'EXTRACTION_FAILED',
+        'INSUFFICIENT_EVIDENCE',
+        'BLOCKED',
         'NEEDS_REVIEW',
         'WARNING',
         'PENDING',
+        'QUEUED',
         'ANALYZING',
         'RUNNING',
         'EXTRACTING',
@@ -122,7 +126,6 @@ export const matchesStatusTab = (claim, tabKey) => {
 
     case 'DISALLOWED':
       return (
-        impact > 0 ||
         deduction.includes('deduction') ||
         deduction.includes('conflict') ||
         deduction.includes('breach') ||
@@ -334,8 +337,11 @@ export default function ClaimsTable({
         }
 
         case 'total_amount': {
-          const rawA = a?.total_amount ?? a?.billed_amount ?? (a?.impact ? a.impact * 2.8 : 85000);
-          const rawB = b?.total_amount ?? b?.billed_amount ?? (b?.impact ? b.impact * 2.8 : 85000);
+          const rawA = a?.total_amount ?? a?.billed_amount;
+          const rawB = b?.total_amount ?? b?.billed_amount;
+          if (rawA == null && rawB != null) return 1;
+          if (rawB == null && rawA != null) return -1;
+          if (rawA == null && rawB == null) return 0;
           const cleanA = typeof rawA === 'string' ? Number(rawA.replace(/[^0-9.-]+/g, '')) : Number(rawA);
           const cleanB = typeof rawB === 'string' ? Number(rawB.replace(/[^0-9.-]+/g, '')) : Number(rawB);
           valA = isNaN(cleanA) ? 0 : cleanA;
@@ -441,15 +447,15 @@ export default function ClaimsTable({
       return `"${sanitized}"`;
     };
 
-    const headers = ['Claim ID', 'Patient', 'Policy Number', 'Status', 'Hospital', 'Total Billed', 'Disallowed Impact', 'Date'];
+    const headers = ['Claim ID', 'Patient', 'Policy Number', 'Status', 'Hospital', 'Total Billed', 'Potential Analysis Impact', 'Date'];
     const rows = sortedClaims.map((c) => [
       sanitizeCsvCell(c?.id || ''),
       sanitizeCsvCell(c?.patient_name || c?.patient || 'Unknown'),
       sanitizeCsvCell(c?.policy_number || ''),
       sanitizeCsvCell(c?.status || ''),
       sanitizeCsvCell(c?.hospital || ''),
-      sanitizeCsvCell(c?.total_amount ?? c?.billed_amount ?? (c?.impact ? Math.round(c.impact * 2.8) : 85000)),
-      sanitizeCsvCell(c?.monetary_impact ?? c?.impact ?? 0),
+      sanitizeCsvCell(c?.total_amount ?? c?.billed_amount ?? ''),
+      sanitizeCsvCell(c?.monetary_impact ?? c?.impact ?? ''),
       sanitizeCsvCell(c?.date || c?.created_at || ''),
     ]);
     const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
@@ -675,7 +681,7 @@ export default function ClaimsTable({
                 className="px-5 py-3.5 cursor-pointer hover:bg-slate-100/70 transition-colors select-none group min-w-[150px]"
               >
                 <div className="flex items-center gap-1.5">
-                  <span>Disallowed (Impact)</span>
+                  <span>Potential Analysis Impact</span>
                   {sortConfig.key === 'impact' ? (
                     sortConfig.direction === 'asc' ? (
                       <ArrowUp className="w-3.5 h-3.5 text-brand-600" />
@@ -722,7 +728,7 @@ export default function ClaimsTable({
                 claim.created_at || claim.date
               );
 
-              const billedAmount = claim.total_amount ?? claim.billed_amount ?? (claim.impact ? Math.round(claim.impact * 2.8) : 85000);
+              const billedAmount = claim.total_amount ?? claim.billed_amount ?? null;
               const disallowedAmount = claim.monetary_impact ?? claim.impact;
               const hasDisallowance = disallowedAmount !== null && disallowedAmount !== undefined && disallowedAmount > 0;
 

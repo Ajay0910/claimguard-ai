@@ -5,8 +5,6 @@ import {
   CheckCircle2,
   XCircle,
   Activity,
-  Zap,
-  Sparkles,
   ArrowRight,
   Lock,
   Scale,
@@ -57,76 +55,6 @@ function AnimatedCheckmark({ isAttached, color = 'teal' }) {
   );
 }
 
-export const SAMPLE_APOLLO_CLAIM = {
-  claimId: 'CLM-84920',
-  patientName: 'Ayush Sharma',
-  policyNumber: 'STAR-IND-99281',
-  hospital: 'Apollo Hospitals, Bangalore',
-  totalBilled: 124000,
-  disallowedAmount: 42500,
-  documents: {
-    HOSPITAL_BILL: {
-      id: 'DOC-APOLLO-BILL-01',
-      name: 'apollo_hospital_bill_itemized.pdf',
-      size: 2457600, // 2.34 MB
-      type: 'application/pdf',
-      format: 'PDF',
-      uploadStatus: 'ready',
-      status: 'VERIFIED',
-      metadata: {
-        hospital_name: 'Apollo Hospitals, Bannerghatta Road, Bangalore',
-        patient_name: 'Ayush Sharma',
-        admission_date: '08/09/2026',
-        discharge_date: '14/09/2026',
-        uhid: 'UHID-BLR-99281',
-        line_items_count: 24,
-        total_amount: 124000,
-        room_category: 'Single Private Deluxe (₹9,500/day)',
-        arithmetic_verified: true,
-      },
-    },
-    INSURANCE_POLICY: {
-      id: 'DOC-STAR-POL-02',
-      name: 'star_health_optima_policy.pdf',
-      size: 1887436, // 1.80 MB
-      type: 'application/pdf',
-      format: 'PDF',
-      uploadStatus: 'ready',
-      status: 'VERIFIED',
-      metadata: {
-        insurer: 'Star Health and Allied Insurance',
-        policy_name: 'Family Health Optima Insurance Plan',
-        policy_number: 'STAR-IND-99281',
-        sum_insured: 1000000, // ₹10,00,000
-        room_rent_limit: '1% of Sum Insured (₹10,000/day)',
-        copay: 0,
-        moratorium_active: true,
-        continuous_coverage_months: 64,
-      },
-    },
-    REJECTION_LETTER: {
-      id: 'DOC-SETTLE-VOUCH-03',
-      name: 'settlement_deduction_voucher.pdf',
-      size: 860160, // 840 KB
-      type: 'application/pdf',
-      format: 'PDF',
-      uploadStatus: 'ready',
-      status: 'VERIFIED',
-      metadata: {
-        reference_no: 'SH-CLM-2026-9928',
-        settlement_type: 'PARTIAL_SETTLEMENT',
-        total_claimed: 124000,
-        approved_amount: 81500,
-        disallowed_amount: 42500,
-        deduction_reasons: [
-          'Proportionate Deduction applied on OT & Doctor consultation',
-          'Hypertension stabilization medicine PED repudiation',
-        ],
-      },
-    },
-  },
-};
-
 export const EXTRACTION_STAGES = [
   {
     id: 1,
@@ -161,7 +89,6 @@ export default function ReadinessCheck({
   extractionStage = 0,
   extractionProgress = 0,
   onRunAudit,
-  onLoadSample,
   onClearAll
 }) {
   const hasBill = Boolean(documents.HOSPITAL_BILL);
@@ -383,47 +310,17 @@ export default function ReadinessCheck({
 
       {/* Fast-Track 1-Click Apollo Hospital Benchmark Claim Loader */}
       <div className="pt-2 border-t border-slate-200/80">
-        <div className="p-3 rounded-xl bg-gradient-to-r from-sky-50 via-teal-50/50 to-indigo-50 border border-sky-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400" />
-              <span className="text-xs font-bold text-slate-800">
-                Auditor Benchmark Demo
-              </span>
-            </div>
-            <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300 uppercase">
-              1-Click Apollo
-            </span>
-          </div>
-
-          <p className="text-[11px] text-slate-600 leading-snug">
-            Populate sample Apollo Hospital claim (<strong className="text-slate-800 font-mono">CLM-84920</strong>) with itemized bill, Star Health policy, and deduction voucher.
-          </p>
-
-          <div className="flex items-center gap-2 pt-1">
+          {uploadedCount > 0 && onClearAll && (
             <button
               type="button"
-              onClick={onLoadSample}
+              onClick={onClearAll}
               disabled={isAnalyzing}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-brand-600 hover:bg-brand-700 hover:scale-101 active:scale-[0.98] text-white text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all duration-150 disabled:opacity-50 cursor-pointer"
+              title="Reset documents"
+              className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 bg-white"
             >
-              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-              <span>Load Sample Apollo Hospital Claim</span>
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
-
-            {uploadedCount > 0 && onClearAll && (
-              <button
-                type="button"
-                onClick={onClearAll}
-                disabled={isAnalyzing}
-                title="Reset documents"
-                className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 bg-white"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
+          )}
       </div>
 
       {/* CTA Button & Session Info */}

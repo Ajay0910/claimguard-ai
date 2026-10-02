@@ -45,27 +45,38 @@ export default function FinancialDelta({
   onNavigateToRules = () => {},
   className = '',
 }) {
-  // 1. Financial Reconciliations & Normalizations (Backend Authoritative)
-  const insurerPaid = Number(result?.total_insurer_calculation ?? 0);
-  const recoverableAmount = Number(result?.total_monetary_impact ?? 0);
-  const correctAllowable = Number(result?.total_correct_calculation ?? 0);
-  const billedAmount = Number(result?.billed_amount ?? 0);
-
-  const totalDisallowed = Number(result?.total_disallowed ?? 0);
-  const legitimateDeduction = Number(result?.legitimate_deduction ?? 0);
-
-  const safeTotal = billedAmount > 0 ? billedAmount : 1;
-  const approvedPct = Number(result?.approved_pct ?? 0);
-  const recoverablePct = Number(result?.recoverable_pct ?? 0);
-  const legitimatePct = Number(result?.legitimate_pct ?? 0);
-
-  const recoveryYield = result?.recovery_yield ?? '0.0';
+  // Use only financial fields produced by the backend adjudication.
+  const insurerPaid = result?.insurer_approved_amount;
+  const recoverableAmount = result?.total_monetary_impact;
+  const correctAllowable = result?.expected_admissible_amount;
+  const billedAmount = result?.billed_amount;
+  const totalDisallowed = result?.total_disallowed;
+  const legitimateDeduction = result?.legitimate_deduction;
+  const approvedPct = result?.approved_pct;
+  const recoverablePct = result?.recoverable_pct;
+  const legitimatePct = result?.legitimate_pct;
+  const recoveryYield = result?.recovery_yield;
 
   // Hover state for stacked bar segments: 'approved' | 'recoverable' | 'patient' | null
   const [activeSegment, setActiveSegment] = useState(null);
 
   // Extract fail verdicts for dynamic discrepancy breakdown
   const failVerdicts = (result.rule_verdicts || []).filter((v) => v.status === 'FAIL');
+
+  const requiredAmounts = [insurerPaid, recoverableAmount, correctAllowable, billedAmount, totalDisallowed, legitimateDeduction, approvedPct, recoverablePct, legitimatePct];
+  if (['EXTRACTION_FAILED', 'INSUFFICIENT_EVIDENCE', 'REVIEW_RECOMMENDED', 'BLOCKED'].includes(result.overall_status)
+    || requiredAmounts.some((value) => value == null) || recoveryYield == null || billedAmount <= 0) {
+    return (
+      <div className={`rounded-xl border border-amber-200 bg-amber-50 p-6 ${className}`} role="status">
+        <h2 className="font-semibold text-amber-900">Financial reconciliation unavailable</h2>
+        <p className="mt-2 text-sm text-amber-800">
+          Required financial values are missing or could not be verified. No payable or recovery amount is shown until review is complete.
+        </p>
+      </div>
+    );
+  }
+
+  const safeTotal = billedAmount;
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -312,7 +323,7 @@ export default function FinancialDelta({
                       Tier 1 Statutory Conflict
                     </span>
                     <span className="text-sm font-extrabold text-rose-600 font-financial">
-                      +{formatInr(v.monetary_impact || 0)}
+                      {formatInr(v.monetary_impact)}
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-slate-900 mt-2">

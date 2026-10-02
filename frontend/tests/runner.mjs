@@ -33,6 +33,7 @@ async function runTestSuite() {
 
   // Dynamically load test tiers
   if (!selectedTier || selectedTier === 1) {
+    await import('./analysis-normalization.test.mjs');
     await import('./tier1-feature-coverage.test.mjs');
   }
   if (!selectedTier || selectedTier === 2) {

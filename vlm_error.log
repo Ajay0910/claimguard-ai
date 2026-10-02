@@ -1,0 +1,4 @@
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=False, provider=openai

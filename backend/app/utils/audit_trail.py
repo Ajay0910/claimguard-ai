@@ -41,6 +41,9 @@ class AuditTrail:
         stmt = select(AuditLog).where(AuditLog.claim_id == claim_id).order_by(AuditLog.id)
         result = await db.execute(stmt)
         logs = result.scalars().all()
+
+        if not logs:
+            return False
         
         expected_prev_hash = None
         for log in logs:

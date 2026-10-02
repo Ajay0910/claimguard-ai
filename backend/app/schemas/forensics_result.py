@@ -37,7 +37,7 @@ class ELAResult(BaseModel):
     heatmap_path: Optional[str] = None
     heatmap_url: Optional[str] = None
     details: str = ""
-    assessment: Literal["CLEAN", "SUSPICIOUS", "HIGHLY_SUSPICIOUS"]
+    assessment: Literal["CLEAN", "SUSPICIOUS", "HIGHLY_SUSPICIOUS", "NOT_ANALYZED"]
 
 class MetadataFlag(BaseModel):
     flag_type: str = ""

@@ -39,14 +39,20 @@ export default function StatusBadge({ status, size = 'md', showIcon = true, clas
 
       case 'REVIEW_RECOMMENDED':
       case 'NEEDS_REVIEW':
+      case 'EXTRACTION_FAILED':
+      case 'INSUFFICIENT_EVIDENCE':
+      case 'REVIEW_REQUIRED':
       case 'WARNING':
       case 'PENDING':
+      case 'QUEUED':
       case 'PARTIAL_SETTLEMENT':
         return {
           wrapper: 'bg-amber-50 text-amber-700 border-amber-200/90',
           dot: 'bg-amber-500',
           icon: Clock,
-          label: normStatus === 'REVIEW_RECOMMENDED' ? 'Review Needed' : normStatus === 'PENDING' ? 'Pending' : 'Under Review',
+          label: ['REVIEW_RECOMMENDED', 'EXTRACTION_FAILED', 'INSUFFICIENT_EVIDENCE', 'REVIEW_REQUIRED'].includes(normStatus)
+            ? 'Review Needed'
+            : normStatus === 'QUEUED' ? 'Queued' : normStatus === 'PENDING' ? 'Pending' : 'Under Review',
         };
 
       case 'ANALYZING':

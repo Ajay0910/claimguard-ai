@@ -24,7 +24,7 @@ class ForensicsEngine:
         """
         ela_result = ELAResult(
             tamper_score=0.0, 
-            assessment="CLEAN", 
+            assessment="NOT_ANALYZED",
             heatmap_url=None, 
             suspicious_regions=[],
             details="Not analyzed"
@@ -89,11 +89,11 @@ class ForensicsEngine:
             overall_risk = "MEDIUM"
 
         if overall_risk == "HIGH":
-            recommendation = "Reject or escalate for manual review immediately. Strong forensic indicators of manipulation or fraud."
+            recommendation = "Manual review is required. Automated checks flagged anomalies that need human verification; do not treat these signals as a decision."
         elif overall_risk == "MEDIUM":
-            recommendation = "Review carefully. Some anomalies detected."
+            recommendation = "Manual review is recommended. Some automated checks returned anomalies that need human verification."
         else:
-            recommendation = "Appears standard. No major forensic anomalies detected."
+            recommendation = "No material anomaly signal was returned by the checks that ran. Human review may still be required."
             
         from ..rules import get_val
         claim_id_val = get_val(bill, 'bill_id', 'unknown_claim') if bill else 'unknown_claim'

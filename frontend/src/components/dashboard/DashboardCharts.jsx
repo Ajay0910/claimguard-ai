@@ -33,73 +33,11 @@ export const formatCompactInr = (amount) => {
   return `${prefix}${abs}`;
 };
 
-// Default high-fidelity dataset for dashboard visualizations
+// Empty by default: portfolio analytics are only shown when backend data exists.
 export const defaultDashboardAnalytics = {
-  statusBreakdown: [
-    { id: 'APPROVED', label: 'Approved (Clean)', count: 72, color: '#059669', hoverColor: '#10B981', ringClass: 'text-emerald-600', bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { id: 'FLAGGED', label: 'Flagged / Conflicts', count: 42, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
-    { id: 'REVIEW', label: 'Under Review', count: 14, color: '#D97706', hoverColor: '#FBBF24', ringClass: 'text-amber-600', bgClass: 'bg-amber-50 text-amber-700 border-amber-200' },
-    { id: 'DISALLOWED', label: 'Disallowed / Deductions', count: 2, color: '#64748B', hoverColor: '#94A3B8', ringClass: 'text-slate-600', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
-  ],
-  waterfallSteps: [
-    { id: 'billed', name: 'Billed Amount', amount: 2480000, base: 0, delta: 2480000, type: 'total', color: '#1E293B', description: 'Total gross hospital billing submitted for audit' },
-    { id: 'approved', name: 'Insurer Approved', amount: 1620000, base: 0, delta: 1620000, type: 'subtotal', color: '#0284C7', description: 'Initial settlement sanctioned prior to statutory audit (65.3%)' },
-    { id: 'disallowed', name: 'Disallowed Deductions', amount: 860000, base: 1620000, delta: -860000, type: 'deduction', color: '#E11D48', description: 'Withheld deductions challenged under IRDAI Master Circular (-34.7%)' },
-    { id: 'recoverable', name: 'Contested & Recoverable', amount: 645000, base: 1620000, delta: 645000, type: 'recovery', color: '#059669', description: 'Identified wrongful deductions backed by Insurance Act Sec 45 (+₹6.45L)' },
-    { id: 'net', name: 'Audited Net Settlement', amount: 2265000, base: 0, delta: 2265000, type: 'final', color: '#0D9488', description: 'Projected net rightful payout after grievance appeal (91.3%)' },
-  ],
-  ruleConflicts: [
-    {
-      id: 'PROP-DED',
-      name: 'Proportionate Deduction Scaling',
-      clause: 'IRDAI Master Circular May 2024, Cl 12.3',
-      tier: 'Tier 1',
-      count: 38,
-      monetaryImpact: 485000,
-      winRate: '94% Win Rate',
-      details: 'Unlawful pro-rata scaling applied to non-room fixed medical fees (OT, ICU, surgeon charges).',
-    },
-    {
-      id: 'ROOM-RENT',
-      name: 'Room Rent Capping & Associated Charges',
-      clause: 'IRDAI Health Reg 2020 & Policy Cl 4.2',
-      tier: 'Tier 1',
-      count: 29,
-      monetaryImpact: 392000,
-      winRate: '88% Win Rate',
-      details: 'Arbitrary 1% sum insured capping enforced despite explicit policy room category endorsements.',
-    },
-    {
-      id: 'CONSUMABLES',
-      name: 'Consumables Non-Payable Exclusion',
-      clause: 'IRDAI Non-Medical Expenses Circular (List I-IV)',
-      tier: 'Tier 2',
-      count: 24,
-      monetaryImpact: 215000,
-      winRate: '76% Win Rate',
-      details: 'Surgical gloves, PPE, and disposable trocars categorized as non-payable despite medical necessity.',
-    },
-    {
-      id: 'MORATORIUM',
-      name: 'Section 45 Moratorium Contestation',
-      clause: 'Insurance Act 1938 Sec 45 (60-Mo Rule)',
-      tier: 'Tier 1',
-      count: 16,
-      monetaryImpact: 284000,
-      winRate: '99% Win Rate',
-      details: 'Pre-existing condition dispute levied after continuous 5-year policy coverage period.',
-    },
-    {
-      id: 'TELECONSULT',
-      name: 'Tele-consultation & Daycare Disallowance',
-      clause: 'IRDAI Telemedicine Practice Guidelines',
-      tier: 'Tier 2',
-      count: 11,
-      monetaryImpact: 52500,
-      winRate: '82% Win Rate',
-      details: 'Specialist pre-admission tele-consultations denied hospitalization equivalence.',
-    },
-  ],
+  statusBreakdown: [],
+  waterfallSteps: [],
+  ruleConflicts: [],
 };
 
 /**
@@ -122,20 +60,20 @@ export function StatusDonutChart({
     let approved = 0;
     let flagged = 0;
     let review = 0;
-    let disallowed = 0;
+    let unavailable = 0;
 
     claims.forEach((c) => {
-      const s = (c.status || '').toUpperCase().trim();
-      const impact = Number(c.monetary_impact ?? c.impact ?? 0);
+      const s = (c.overall_status || c.status || '').toUpperCase().trim();
+      const impact = Number(c.total_monetary_impact ?? c.monetary_impact ?? c.impact ?? 0);
 
       if (['FAIL', 'FAILED', 'MISMATCH_DETECTED', 'HIGH_RISK', 'TAMPERED', 'REJECTED'].includes(s) || impact > 0) {
         flagged++;
-      } else if (['PASS', 'APPROVED', 'CLEAN', 'NO_MISMATCH_FOUND', 'VERIFIED'].includes(s) || (s === 'COMPLETED' && impact === 0)) {
+      } else if (['PASS', 'APPROVED', 'CLEAN', 'NO_MISMATCH_FOUND', 'VERIFIED'].includes(s)) {
         approved++;
-      } else if (['REVIEW_RECOMMENDED', 'NEEDS_REVIEW', 'WARNING', 'PENDING', 'ANALYZING', 'RUNNING', 'EXTRACTING'].includes(s)) {
+      } else if (['REVIEW_RECOMMENDED', 'NEEDS_REVIEW', 'WARNING', 'PENDING', 'QUEUED', 'ANALYZING', 'RUNNING', 'EXTRACTING', 'EXTRACTION_FAILED', 'INSUFFICIENT_EVIDENCE', 'BLOCKED'].includes(s)) {
         review++;
       } else {
-        disallowed++;
+        unavailable++;
       }
     });
 
@@ -143,7 +81,7 @@ export function StatusDonutChart({
       { id: 'APPROVED', label: 'Approved (Clean)', count: approved, color: '#059669', hoverColor: '#10B981', ringClass: 'text-emerald-600', bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
       { id: 'FLAGGED', label: 'Flagged / Conflicts', count: flagged, color: '#E11D48', hoverColor: '#FB7185', ringClass: 'text-rose-600', bgClass: 'bg-rose-50 text-rose-700 border-rose-200' },
       { id: 'REVIEW', label: 'Under Review', count: review, color: '#D97706', hoverColor: '#FBBF24', ringClass: 'text-amber-600', bgClass: 'bg-amber-50 text-amber-700 border-amber-200' },
-      { id: 'DISALLOWED', label: 'Disallowed / Deductions', count: disallowed, color: '#64748B', hoverColor: '#94A3B8', ringClass: 'text-slate-600', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
+      { id: 'UNAVAILABLE', label: 'Outcome unavailable', count: unavailable, color: '#64748B', hoverColor: '#94A3B8', ringClass: 'text-slate-600', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
     ];
   }, [claims, data]);
 
@@ -315,28 +253,19 @@ export function FinancialWaterfallChart({
 }) {
   const [hoveredStep, setHoveredStep] = useState(null);
 
-  // Dynamic waterfall steps calibrated to stats if provided
-  const dynamicSteps = useMemo(() => {
-    if (steps) return steps;
-
-    const totalRecovered = stats?.total_recovered_amount ?? stats?.total_amount_recovered ?? 1428500;
-    const billed = Math.round(totalRecovered * 2.85); // ₹40.7L billed
-    const disallowed = Math.round(totalRecovered * 1.35); // ₹19.3L disputed
-    const approved = billed - disallowed; // ₹21.4L approved initial
-    const netPayout = approved + totalRecovered; // ₹35.7L final audited
-
-    return [
-      { id: 'billed', name: 'Billed Amount', amount: billed, base: 0, type: 'total', color: '#1E293B', description: 'Total gross hospital billing submitted for audit' },
-      { id: 'approved', name: 'Insurer Approved', amount: approved, base: 0, type: 'subtotal', color: '#0284C7', description: 'Initial settlement sanctioned prior to statutory audit' },
-      { id: 'disallowed', name: 'Disallowed Deductions', amount: disallowed, base: approved, type: 'deduction', color: '#E11D48', description: 'Withheld deductions challenged under IRDAI Master Circular Cl 12.3' },
-      { id: 'recoverable', name: 'Contested & Recoverable', amount: totalRecovered, base: approved, type: 'recovery', color: '#059669', description: 'Identified wrongful deductions backed by Insurance Act Sec 45' },
-      { id: 'net', name: 'Audited Net Settlement', amount: netPayout, base: 0, type: 'final', color: '#0D9488', description: 'Projected net rightful payout after grievance appeal' },
-    ];
-  }, [stats, steps]);
+  const dynamicSteps = useMemo(() => steps || [], [steps]);
 
   const rawMaxVal = Math.max(...dynamicSteps.map((s) => (s?.amount ?? 0) + (s?.base || 0))) * 1.15;
   const maxVal = rawMaxVal <= 0 || isNaN(rawMaxVal) ? 1 : rawMaxVal;
   const chartHeight = 175; // px
+
+  if (dynamicSteps.length === 0) {
+    return (
+      <div className={`card-enterprise flex h-full items-center p-6 ${className}`} role="status">
+        <p className="text-sm text-slate-600">Financial portfolio totals are unavailable from the backend, so no estimated waterfall is shown.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`card-enterprise p-6 flex flex-col justify-between h-full ${className}`}>
@@ -350,9 +279,6 @@ export function FinancialWaterfallChart({
           <p className="text-xs text-slate-500 mt-0.5">
             Reconciling Billed Charges &rarr; Insurer Cuts &rarr; Recovered Capital
           </p>
-        </div>
-        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-          <span className="text-[11px] font-bold text-emerald-700">74.2% Recovery Yield</span>
         </div>
       </div>
 
@@ -461,7 +387,7 @@ export function FinancialWaterfallChart({
  * 3. Rule Conflict Frequency Bar Chart
  */
 export function RuleConflictBarChart({
-  rules = defaultDashboardAnalytics.ruleConflicts,
+  rules = [],
   className = '',
 }) {
   const [sortBy, setSortBy] = useState('count'); // 'count' | 'impact'
@@ -487,6 +413,15 @@ export function RuleConflictBarChart({
     });
     setTimeout(() => setCopiedId(null), 2200);
   };
+
+  if (!rules.length) {
+    return (
+      <div className="card-enterprise p-6" role="status">
+        <h3 className="text-sm font-bold text-slate-900">Rule frequency summary unavailable</h3>
+        <p className="mt-2 text-xs text-slate-500">The backend has not supplied aggregated rule data for this portfolio.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`card-enterprise p-6 ${className}`}>

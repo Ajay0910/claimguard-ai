@@ -9,7 +9,7 @@ echo.
 echo [1] Setting up Python backend...
 cd backend
 pip install -r requirements.txt >nul 2>&1
-copy .env.example .env 2>nul
+if not exist .env copy .env.example .env 2>nul
 echo.
 echo [2] Starting backend server (network-accessible)...
 start cmd /k "cd /d %~dp0backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"

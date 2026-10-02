@@ -5,10 +5,6 @@
       "destination": "https://claimguard-ai-rthz.onrender.com/api/:path*"
     },
     {
-      "source": "/ws/:path*",
-      "destination": "https://claimguard-ai-rthz.onrender.com/ws/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/"
     }

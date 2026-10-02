@@ -1,6 +1,6 @@
 /**
  * src/components/analysis/AuditTimeline.jsx
- * Cryptographic SHA-256 Block Ledger Timeline
+ * Audit event and hash-link timeline
  * Feature 15: Cryptographic SHA-256 Audit Trail
  * Compliant with FIPS 180-4 Standard Cryptographic Hash Specifications
  */
@@ -23,7 +23,6 @@ import {
   Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { mockAuditTrail } from '../../services/mockData';
 
 export const formatDateSafe = (dateString) => {
   if (!dateString) return 'N/A';
@@ -37,20 +36,20 @@ export const formatDateSafe = (dateString) => {
 
 export default function AuditTimeline({
   auditTrail = null,
-  claimId = 'CLM-84920',
+  claimId = null,
 }) {
-  const trail = auditTrail || mockAuditTrail;
+  const trail = auditTrail || {};
   const logs = trail.audit_logs || [];
 
   const [copiedHash, setCopiedHash] = useState(null);
   const [expandedBlock, setExpandedBlock] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verifiedChain, setVerifiedChain] = useState(trail.verified !== false);
+  const [verifiedChain, setVerifiedChain] = useState(trail.verified === true);
 
   // Copy hash to clipboard with visual and toast feedback
   const handleCopyHash = (hash, label) => {
     if (!hash) return;
-    if (navigator?.clipboard?.writeText) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(hash).catch(() => {});
     }
     setCopiedHash(hash);
@@ -63,6 +62,10 @@ export default function AuditTimeline({
 
   // Interactive verify chain animation & cryptographic validation
   const handleVerifyChain = () => {
+    if (logs.length === 0) {
+      toast.error('No audit events are available to verify');
+      return;
+    }
     setIsVerifying(true);
     setTimeout(() => {
       // Validate chronological hash chain: block[i].previous_hash === block[i-1].entry_hash
@@ -76,19 +79,28 @@ export default function AuditTimeline({
       setIsVerifying(false);
       setVerifiedChain(isValid);
       if (isValid) {
-        toast.success('SHA-256 Ledger Verified', {
-          description: `All ${logs.length} chronological blocks cryptographically sealed and valid.`,
+        toast.success('Hash links verified', {
+          description: `The previous-hash references are linked across ${logs.length} audit events.`,
           icon: '🛡️',
           duration: 3500,
         });
       } else {
-        toast.error('Ledger Integrity Failure', {
-          description: 'Cryptographic mismatch detected in hash chain ledger!',
+        toast.error('Hash link mismatch', {
+          description: 'The previous-hash references do not form a continuous chain.',
           duration: 3500,
         });
       }
     }, 1100);
   };
+
+  if (!auditTrail || logs.length === 0) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6" role="status">
+        <h2 className="font-semibold text-amber-900">Audit trail unavailable</h2>
+        <p className="mt-2 text-sm text-amber-800">No audit events were returned for this claim, so there is no hash chain to verify.</p>
+      </div>
+    );
+  }
 
   // Human-readable labels & icons for pipeline actions
   const getActionConfig = (action) => {
@@ -124,7 +136,7 @@ export default function AuditTimeline({
       case 'AUDIT_REPORT_SEALED':
       default:
         return {
-          title: 'Cryptographic Audit Dossier Sealed & Committed',
+          title: 'Audit event',
           icon: Stamp,
           color: 'text-emerald-600',
           bg: 'bg-emerald-50 border-emerald-200',
@@ -134,7 +146,7 @@ export default function AuditTimeline({
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Top Banner: Cryptographic Hash Chain Verification Badge */}
+      {/* Audit events and their hash-link sequence */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-elevation border border-slate-800 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-emerald-500/15 to-transparent pointer-events-none" />
 
@@ -142,13 +154,13 @@ export default function AuditTimeline({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-semibold uppercase tracking-wider">
               <Lock className="w-4 h-4" />
-              <span>FIPS 180-4 Standard Cryptographic Ledger</span>
+              <span>Audit events and hash links</span>
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-              Cryptographic SHA-256 Audit Trail
+              Audit Trail
               {verifiedChain && (
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Ledger Hash Chain Verified
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Hash Links Verified
                 </span>
               )}
             </h2>
@@ -176,7 +188,7 @@ export default function AuditTimeline({
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Verify Hash Chain</span>
+                  <span>Verify Hash Links</span>
                 </>
               )}
             </button>
@@ -265,7 +277,7 @@ export default function AuditTimeline({
                       <Link2 className="w-3 h-3 text-slate-400" />
                     </div>
                     <div className="mt-1 text-[11px] text-slate-600 truncate font-semibold">
-                      {block.previous_hash || '0000000000000000000000000000000000000000000000000000000000000000'}
+                      {block.previous_hash || 'No previous hash recorded'}
                     </div>
                   </div>
 

@@ -17,13 +17,22 @@ from .vlm_extractor import VLMExtractor
 class ExtractionPipeline:
     def __init__(self, config: Dict[str, Any]):
         self.ocr_engine = OCREngine()
+        self.max_pages = int(config.get("max_document_pages", 30))
+        self.max_total_pixels = int(config.get("max_document_total_pixels", 40_000_000))
         
         vlm_provider = config.get("vlm_provider", "openai")
         vlm_api_key = config.get("vlm_api_key", "")
-        self.use_vlm = bool(vlm_api_key)
+        normalized_key = str(vlm_api_key or "").strip().lower()
+        self.use_vlm = bool(normalized_key) and not any(
+            marker in normalized_key for marker in ("replace-with", "your-api-key", "changeme", "placeholder")
+        )
         
         if self.use_vlm:
-            self.vlm_extractor = VLMExtractor(provider=vlm_provider, api_key=vlm_api_key)
+            self.vlm_extractor = VLMExtractor(
+                provider=vlm_provider,
+                api_key=vlm_api_key,
+                model=config.get("vlm_model"),
+            )
         else:
             self.vlm_extractor = None
 
@@ -78,7 +87,11 @@ class ExtractionPipeline:
     def process_document(self, file_path: str, expected_type: str = None) -> Dict[str, Any]:
         """Main entry point to process a document."""
         # 1. Prepare document
-        pages = prepare_document(file_path)
+        pages = prepare_document(
+            file_path,
+            max_pages=self.max_pages,
+            max_total_pixels=self.max_total_pixels,
+        )
         if not pages:
             raise ValueError("No pages extracted from document")
             
@@ -98,7 +111,7 @@ class ExtractionPipeline:
         combined_text = "\n\n".join(full_text)
         
         # Determine strategy
-        needs_vlm = False
+        needs_vlm = True
         
         # 3. If OCR confidence < 70%, fall back to VLM
         if min_conf < 0.7:
@@ -113,6 +126,7 @@ class ExtractionPipeline:
                 # 5. Classify document type using the first page
                 first_page = pages[0]
                 image_bytes = self._convert_image_to_bytes(first_page)
+                all_image_bytes = [self._convert_image_to_bytes(page) for page in pages]
                 mime_type = "image/png"
                 
                 if expected_type == 'HOSPITAL_BILL':
@@ -126,11 +140,11 @@ class ExtractionPipeline:
                 
                 # 6. Return structured data as Pydantic model
                 if doc_type == 'bill':
-                    result = self.vlm_extractor.extract_hospital_bill(image_bytes, mime_type)
+                    result = self.vlm_extractor.extract_hospital_bill(all_image_bytes, mime_type)
                 elif doc_type == 'policy':
-                    result = self.vlm_extractor.extract_insurance_policy(image_bytes, mime_type)
+                    result = self.vlm_extractor.extract_insurance_policy(all_image_bytes, mime_type)
                 elif doc_type == 'rejection':
-                    result = self.vlm_extractor.extract_rejection_letter(image_bytes, mime_type)
+                    result = self.vlm_extractor.extract_rejection_letter(all_image_bytes, mime_type)
                 else:
                     raise ValueError(f"Unknown document classification: {doc_type}")
                     
@@ -140,40 +154,30 @@ class ExtractionPipeline:
                     "type": doc_type,
                     "data": result,
                     "ocr_fallback_text": combined_text,
+                    "ocr_pages": full_text,
                     "status": status,
                     "issues": issues
                 }
             except Exception as e:
-                print(f"VLM extraction failed: {str(e)}. Falling back to OCR...")
+                import logging
+                logging.getLogger(__name__).error("VLM extraction failed (%s)", type(e).__name__)
                 # Fall through to OCR block below
 
-        # OCR Fallback Block (executed if VLM is disabled or if VLM threw an exception)
-        from ..schemas.hospital_bill import HospitalBill, BillLineItem
-        from ..schemas.insurance_policy import InsurancePolicy
-        from ..schemas.rejection_letter import RejectionLetter, RejectionReason
-
-        dummy_data = None
+        # OCR text is not structured claim data. Preserve it for review, but do
+        # not create an empty model that downstream rules could mistake for an
+        # extracted bill, policy, or settlement.
         doc_type = expected_type or "unknown"
-        
-        if expected_type == 'HOSPITAL_BILL':
-            dummy_data = HospitalBill()
-        elif expected_type == 'INSURANCE_POLICY':
-            dummy_data = InsurancePolicy()
-        elif expected_type == 'REJECTION_LETTER':
-            dummy_data = RejectionLetter()
-            
-        status, issues = self._validate_extraction(doc_type, dummy_data)
-        if status != "INSUFFICIENT_EVIDENCE":
-            status = "INSUFFICIENT_EVIDENCE"
-            issues.append("FALLBACK_USED")
-            
+        issues = ["NO_STRUCTURED_EXTRACTION"]
+        issues.append("VLM_EXTRACTION_FAILED" if self.use_vlm else "VLM_API_KEY_MISSING")
+
         return {
-            "source": "ocr",
+            "source": "none",
             "type": doc_type,
             "text": combined_text,
+            "ocr_pages": full_text,
             "confidence": min_conf,
-            "data": dummy_data,
-            "status": status,
+            "data": None,
+            "status": "INSUFFICIENT_EVIDENCE",
             "issues": issues
         }
 

@@ -1,6 +1,7 @@
 import pytest
 import os
 import asyncio
+import hashlib
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import create_async_engine
 from alembic.config import Config
@@ -48,10 +49,11 @@ async def test_migration_preserves_data():
     # 4. Verify data survived
     engine = sa.create_engine(sync_url)
     with engine.connect() as conn:
-        result = conn.execute(sa.text("SELECT id, patient_name FROM claims WHERE id = 'claim_mig_1'")).fetchone()
+        result = conn.execute(sa.text("SELECT id, patient_name, portal_token FROM claims WHERE id = 'claim_mig_1'")).fetchone()
         assert result is not None
         assert result[0] == "claim_mig_1"
         assert result[1] == "Test Patient"
+        assert result[2] == hashlib.sha256(b"token123").hexdigest()
         
         # Verify alembic_version exists
         alembic_version = conn.execute(sa.text("SELECT version_num FROM alembic_version")).fetchone()

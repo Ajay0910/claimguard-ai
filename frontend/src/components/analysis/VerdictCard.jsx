@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 
 // Format currency in Indian Rupees
 export const formatInr = (amount) => {
+  if (amount === null || amount === undefined || amount === '') return 'Unavailable';
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -115,20 +116,21 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
   };
 
   // Calculations & Delta Bar Ratios
-  const insurerCalc = Number(verdict.insurer_calculation || 0);
-  const correctCalc = Number(verdict.correct_calculation || 0);
-  const impact = Number(verdict.monetary_impact || 0);
+  const insurerCalc = verdict.insurer_calculation;
+  const correctCalc = verdict.correct_calculation;
+  const impact = verdict.monetary_impact;
+  const hasCalculation = [insurerCalc, correctCalc, impact].some((value) => value !== null && value !== undefined);
 
   // Maximum value for proportional delta bar scaling
-  const maxVal = Math.max(correctCalc, insurerCalc, 1);
-  const insurerBarWidth = Math.min(100, Math.max(8, (insurerCalc / maxVal) * 100));
-  const correctBarWidth = Math.min(100, Math.max(8, (correctCalc / maxVal) * 100));
+  const maxVal = Math.max(Number(correctCalc) || 0, Number(insurerCalc) || 0, 1);
+  const insurerBarWidth = Math.min(100, Math.max(8, ((Number(insurerCalc) || 0) / maxVal) * 100));
+  const correctBarWidth = Math.min(100, Math.max(8, ((Number(correctCalc) || 0) / maxVal) * 100));
 
   // AI Confidence formatting
   const rawConfidence = verdict.confidence ?? verdict.confidence_score;
   const confidencePercent = rawConfidence !== undefined && rawConfidence !== null
     ? Math.round(Number(rawConfidence) <= 1 ? Number(rawConfidence) * 100 : Number(rawConfidence))
-    : 96;
+    : null;
 
   return (
     <div
@@ -173,7 +175,7 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
 
             {/* AI Confidence Meter */}
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
-              AI Confidence: <strong className="ml-1 text-slate-900 font-financial">{confidencePercent}%</strong>
+              AI Confidence: <strong className="ml-1 text-slate-900 font-financial">{confidencePercent == null ? 'Unavailable' : `${confidencePercent}%`}</strong>
             </span>
           </div>
 
@@ -183,7 +185,7 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
             </h4>
 
             {/* Monetary Impact Hero Pill */}
-            {isFail && impact > 0 && (
+            {isFail && impact != null && Number(impact) > 0 && (
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-50 border border-rose-200 self-start sm:self-auto flex-shrink-0">
                 <span className="text-xs font-semibold text-rose-700">Contested Impact:</span>
                 <span className="text-sm font-extrabold text-rose-700 font-financial">
@@ -216,7 +218,7 @@ export default function VerdictCard({ verdict = {}, defaultExpanded = false }) {
       {isExpanded && (
         <div className="border-t border-slate-100 bg-slate-50/50 p-5 space-y-4">
           {/* Visual Delta Bar (Insurer Approved vs Correct Allowable Amount) */}
-          {(insurerCalc > 0 || correctCalc > 0 || impact > 0) && (
+          {hasCalculation && (
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-700 uppercase tracking-wider">

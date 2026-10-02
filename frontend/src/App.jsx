@@ -8,7 +8,6 @@ import Topbar from './components/common/Topbar';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import Analysis from './pages/Analysis';
-import { mockAuditor } from './services/mockData';
 
 function App() {
   const location = useLocation();
@@ -78,11 +77,11 @@ function App() {
       <div className="p-4 border-t border-slate-800/80 bg-slate-950/30">
         <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/40 border border-slate-700/50">
           <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-            {mockAuditor.avatar_initials}
+            CG
           </div>
           <div className="overflow-hidden flex-1">
-            <div className="text-xs font-semibold text-slate-200 truncate">{mockAuditor.name}</div>
-            <div className="text-[10px] text-slate-400 truncate">{mockAuditor.license}</div>
+            <div className="text-xs font-semibold text-slate-200 truncate">ClaimGuard AI</div>
+            <div className="text-[10px] text-slate-400 truncate">Claims workspace</div>
           </div>
         </div>
       </div>

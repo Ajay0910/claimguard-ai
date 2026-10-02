@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import BatchDropzone, { autoTagDocument, validateUploadFile } from '../components/upload/BatchDropzone';
 import DocumentCard from '../components/upload/DocumentCard';
-import ReadinessCheck, { SAMPLE_APOLLO_CLAIM, EXTRACTION_STAGES } from '../components/upload/ReadinessCheck';
+import ReadinessCheck, { EXTRACTION_STAGES } from '../components/upload/ReadinessCheck';
 import { uploadDocument, triggerAnalysis } from '../services/api';
 
 const DOCUMENT_KEYS = ['HOSPITAL_BILL', 'INSURANCE_POLICY', 'REJECTION_LETTER'];
@@ -199,18 +199,6 @@ export default function Upload() {
   };
 
   /**
-   * 1-Click Apollo Hospital Benchmark Claim Loader.
-   * Instantly populates the tripartite set with CLM-84920 and sets 100% readiness.
-   */
-  const handleLoadSample = () => {
-    setClaimId(SAMPLE_APOLLO_CLAIM.claimId);
-    setDocuments(SAMPLE_APOLLO_CLAIM.documents);
-    toast.success('Benchmark Claim Loaded', {
-      description: 'Apollo Hospital (CLM-84920) tripartite documents attached at 100% readiness.',
-    });
-  };
-
-  /**
    * Clear all documents and reset session.
    */
   const handleClearAll = () => {
@@ -232,7 +220,7 @@ export default function Upload() {
    * Run Claim Forensics & Audit with 4-Stage Extraction Progress Animation.
    */
   const handleRunAudit = async () => {
-    const activeId = claimId || SAMPLE_APOLLO_CLAIM.claimId;
+    const activeId = claimId;
     if (!activeId) {
       toast.error('No Active Session', {
         description: 'Please attach documents before initiating audit.',
@@ -244,90 +232,17 @@ export default function Upload() {
     setExtractionProgress(5);
     setExtractionStage(0);
 
-    // Initial Stage 1 Stacked Toast
-    toast.loading('Stage 1/4: Uploading & Hashing', {
-      id: 'ocr-stage-1',
-      description: 'Streaming encrypted multipart chunks & computing SHA-256 block hash...',
-    });
-
-    // 4-Stage Sequential Animation with Stacked Pipeline Toasts
-    let progress = 5;
-    let lastStage = 0;
-
-    animationIntervalRef.current = setInterval(() => {
-      progress += 4;
-      setExtractionProgress(Math.min(progress, 98));
-
-      let currentStage = 0;
-      if (progress < 25) {
-        currentStage = 0; // Stage 1: Uploading & Hashing
-      } else if (progress < 60) {
-        currentStage = 1; // Stage 2: Extracting OCR Tokens
-      } else if (progress < 85) {
-        currentStage = 2; // Stage 3: Verifying Clinical Schema
-      } else {
-        currentStage = 3; // Stage 4: Ready for Forensics
-      }
-
-      setExtractionStage(currentStage);
-
-      // Transition stacked toasts when stage advances
-      if (currentStage > lastStage) {
-        if (lastStage === 0 && currentStage >= 1) {
-          toast.success('Stage 1 Complete: Hashed & Verified', {
-            id: 'ocr-stage-1',
-            description: 'SHA-256 cryptographic hashes sealed for all 3 documents.',
-          });
-          toast.loading('Stage 2/4: Extracting OCR Tokens', {
-            id: 'ocr-stage-2',
-            description: 'Scanning tabular line items, tariff codes & TPA deduction clauses...',
-          });
-        }
-        if (lastStage === 1 && currentStage >= 2) {
-          toast.success('Stage 2 Complete: OCR Tokens Extracted', {
-            id: 'ocr-stage-2',
-            description: '24 itemized charges, tariff codes, and disallowance vouchers parsed.',
-          });
-          toast.loading('Stage 3/4: Verifying Clinical Schema', {
-            id: 'ocr-stage-3',
-            description: 'Validating arithmetic totals, room-rent limits & IRDAI schedules...',
-          });
-        }
-        if (lastStage === 2 && currentStage >= 3) {
-          toast.success('Stage 3 Complete: Clinical Schema Verified', {
-            id: 'ocr-stage-3',
-            description: 'Zero arithmetic discrepancy; IRDAI statutory baseline locked.',
-          });
-          toast.loading('Stage 4/4: Ready for Forensics', {
-            id: 'ocr-stage-4',
-            description: 'Forwarding payload to Rule Adjudication & Digital Forensics Lab...',
-          });
-        }
-        lastStage = currentStage;
-      }
-
-      if (progress >= 100) {
-        if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
-      }
-    }, 120);
+    toast.loading('Starting claim analysis…', { id: 'analysis-start' });
 
     try {
       await triggerAnalysis(activeId);
-      // Wait for progress animation to reach 100%
-      setTimeout(() => {
-        if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
-        setExtractionProgress(100);
-        setExtractionStage(3);
-        toast.success('Stage 4 Complete: Forensic Audit Initiated', {
-          id: 'ocr-stage-4',
-          description: `Navigating to complete clinical audit dossier for claim ${activeId}.`,
-        });
-        navigate(`/analysis/${activeId}`);
-      }, 3400);
+      toast.success('Analysis started', { id: 'analysis-start' });
+      navigate(`/analysis/${activeId}`);
     } catch (error) {
       console.error('Trigger analysis error:', error);
       if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
       setIsAnalyzing(false);
+      toast.dismiss('analysis-start');
       toast.error('Pipeline Execution Failed', {
         description: error?.message || 'Failed to initiate analysis pipeline.',
       });
@@ -418,7 +333,6 @@ export default function Upload() {
             extractionStage={extractionStage}
             extractionProgress={extractionProgress}
             onRunAudit={handleRunAudit}
-            onLoadSample={handleLoadSample}
             onClearAll={handleClearAll}
           />
         </div>

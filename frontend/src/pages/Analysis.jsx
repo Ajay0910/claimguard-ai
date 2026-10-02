@@ -33,13 +33,14 @@ import {
   getAnalysisResult,
   getAppealDraft,
   getAuditTrail,
+  getClaims,
 } from '../services/api';
 
 const VALID_TABS = ['financial', 'forensics', 'audit', 'appeal'];
 
 export default function Analysis() {
   const { id } = useParams();
-  const claimId = id || 'CLM-84920';
+  const claimId = id || 'Unknown claim';
 
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
@@ -58,6 +59,7 @@ export default function Analysis() {
   // Query & Loading State
   const [status, setStatus] = useState('RUNNING');
   const [result, setResult] = useState(null);
+  const [claimRecord, setClaimRecord] = useState(null);
   const [auditTrail, setAuditTrail] = useState(null);
   const [appealDraft, setAppealDraft] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,18 +71,20 @@ export default function Analysis() {
     setFetchError(null);
     try {
       const statusData = await getAnalysisStatus(claimId);
-      setStatus(statusData.status || 'COMPLETED');
+      setStatus(statusData.status || 'RUNNING');
 
-      const [resultData, auditData, appealData] = await Promise.all([
+      const [resultData, auditData, appealData, claimsData] = await Promise.all([
         getAnalysisResult(claimId),
         getAuditTrail(claimId),
         getAppealDraft(claimId),
+        getClaims(),
       ]);
 
       setResult(resultData);
+      setClaimRecord(claimsData.find((claim) => claim.id === claimId) || null);
       setAuditTrail(auditData);
       setAppealDraft(appealData);
-      setStatus(resultData?.status || statusData?.status || 'COMPLETED');
+      setStatus(resultData?.status || statusData?.status || 'RUNNING');
     } catch (error) {
       console.error('Error fetching analysis dossier:', error);
       setFetchError(error?.message || 'Failed to fetch claim analysis dossier');
@@ -94,7 +98,7 @@ export default function Analysis() {
     loadData();
 
     // Polling only if status is active running/analyzing
-    if (status === 'RUNNING' || status === 'PENDING' || status === 'ANALYZING') {
+    if (status === 'RUNNING' || status === 'PENDING' || status === 'QUEUED' || status === 'ANALYZING') {
       interval = setInterval(loadData, 3000);
     }
 
@@ -163,7 +167,7 @@ export default function Analysis() {
     };
   }, [result?.rule_verdicts]);
 
-  const isAnalyzing = status === 'RUNNING' || status === 'PENDING' || status === 'ANALYZING';
+  const isAnalyzing = status === 'RUNNING' || status === 'PENDING' || status === 'QUEUED' || status === 'ANALYZING';
 
   // Loading Skeleton & Clinical Pipeline Checklist
   if (isLoading || isAnalyzing) {
@@ -243,11 +247,22 @@ export default function Analysis() {
     );
   }
 
-  const recoverableAmount = result?.total_monetary_impact || 0;
-  const overallStatus = result?.overall_status || 'MISMATCH_DETECTED';
+  if (!result) {
+    return (
+      <ErrorState
+        title={`No analysis result for ${claimId}`}
+        message="The backend has not returned an analysis result for this claim. Retry after the analysis finishes."
+        onRetry={loadData}
+        retryLabel="Refresh analysis"
+      />
+    );
+  }
+
+  const recoverableAmount = result.total_monetary_impact;
+  const overallStatus = result.overall_status || 'INSUFFICIENT_EVIDENCE';
   const hasMismatch = overallStatus === 'MISMATCH_DETECTED' || overallStatus === 'FAIL';
-  const elaScore = result?.forensics?.ela_result?.tamper_score ?? 8.4;
-  const logCount = auditTrail?.audit_logs?.length ?? 5;
+  const elaScore = result.forensics?.ela_result?.tamper_score ?? null;
+  const logCount = auditTrail?.audit_logs?.length ?? 0;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-16">
@@ -274,11 +289,8 @@ export default function Analysis() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1.5">
-              <span>Patient: <strong className="text-slate-800">Ayush Sharma</strong></span>
-              <span>•</span>
-              <span>Policy: <strong className="text-slate-800 font-financial">STAR-IND-99281</strong></span>
-              <span>•</span>
-              <span>Hospital: <strong className="text-slate-800">Apollo Hospitals, Bangalore</strong></span>
+              {claimRecord?.patient_name && <span>Patient: <strong className="text-slate-800">{claimRecord.patient_name}</strong></span>}
+              {claimRecord?.policy_number && <span>Policy: <strong className="text-slate-800 font-financial">{claimRecord.policy_number}</strong></span>}
             </div>
           </div>
         </div>
@@ -361,7 +373,7 @@ export default function Analysis() {
           }`}
         >
           <Fingerprint className="w-4 h-4 text-medical-cyan" />
-          <span>Digital Forensics & Fraud Lab</span>
+          <span>Document Review Signals</span>
           <span
             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
               activeTab === 'forensics'
@@ -369,7 +381,7 @@ export default function Analysis() {
                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             }`}
           >
-            ELA {elaScore}%
+            {elaScore == null ? 'ELA unavailable' : `ELA ${elaScore}`}
           </span>
         </button>
 
@@ -482,8 +494,6 @@ export default function Analysis() {
         {activeTab === 'forensics' && (
           <ForensicsLab
             forensics={result?.forensics}
-            claimId={claimId}
-            totalBilled={result?.total_correct_calculation || 110500}
           />
         )}
 

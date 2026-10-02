@@ -33,8 +33,7 @@ def test_pipeline_no_dummy_data_leakage():
         # Test process_document
         res = pipeline.process_document("dummy.pdf", expected_type="HOSPITAL_BILL")
         
-        # Should return an empty HospitalBill, not Ramesh Kulkarni
+        # Unstructured OCR text must not be represented as a typed empty bill.
         assert res["status"] == "INSUFFICIENT_EVIDENCE"
-        data = res["data"]
-        assert data.patient_name is None
-        assert data.hospital_name is None
+        assert res["data"] is None
+        assert res["source"] == "none"

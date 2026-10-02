@@ -4,10 +4,11 @@ from sqlalchemy import select
 from typing import Optional
 
 from ..database import get_db
+from ..security.auth import require_staff_access
 from ..models.claim import Claim, AuditLog, AnalysisRun
 from ..utils.audit_trail import AuditTrail
 
-router = APIRouter(prefix='/api', tags=['reports'])
+router = APIRouter(prefix='/api', tags=['reports'], dependencies=[Depends(require_staff_access)])
 
 @router.get('/reports/{claim_id}')
 async def get_report(claim_id: str, db: AsyncSession = Depends(get_db)) -> dict:

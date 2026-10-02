@@ -1,0 +1,83 @@
+Pipeline init. use_vlm=True, provider=anthropic
+VLM ERROR: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'API key is invalid.'}, 'request_id': None}
+Traceback (most recent call last):
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\pipeline.py", line 132, in process_document
+    result = self.vlm_extractor.extract_hospital_bill(image_bytes, mime_type)
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\vlm_extractor.py", line 135, in extract_hospital_bill
+    return self._extract_anthropic(image_bytes, mime_type, BILL_EXTRACTION_PROMPT, HospitalBill, "extract_hospital_bill") if self.provider == 'anthropic' else self._extract_openai(image_bytes, mime_type, BILL_EXTRACTION_PROMPT, HospitalBill)
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\vlm_extractor.py", line 47, in _extract_anthropic
+    response = self.client.messages.create(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_utils\_utils.py", line 275, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\resources\messages.py", line 888, in create
+    return self._post(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 1279, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 956, in request
+    return self._request(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 1060, in _request
+    raise self._make_status_error_from_response(err.response) from None
+anthropic.AuthenticationError: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'API key is invalid.'}, 'request_id': None}
+
+VLM ERROR: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'API key is invalid.'}, 'request_id': None}
+Traceback (most recent call last):
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\pipeline.py", line 134, in process_document
+    result = self.vlm_extractor.extract_insurance_policy(image_bytes, mime_type)
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\vlm_extractor.py", line 140, in extract_insurance_policy
+    return self._extract_anthropic(image_bytes, mime_type, POLICY_EXTRACTION_PROMPT, InsurancePolicy, "extract_insurance_policy") if self.provider == 'anthropic' else self._extract_openai(image_bytes, mime_type, POLICY_EXTRACTION_PROMPT, InsurancePolicy)
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\vlm_extractor.py", line 47, in _extract_anthropic
+    response = self.client.messages.create(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_utils\_utils.py", line 275, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\resources\messages.py", line 888, in create
+    return self._post(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 1279, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 956, in request
+    return self._request(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 1060, in _request
+    raise self._make_status_error_from_response(err.response) from None
+anthropic.AuthenticationError: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'API key is invalid.'}, 'request_id': None}
+
+VLM ERROR: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'API key is invalid.'}, 'request_id': None}
+Traceback (most recent call last):
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\pipeline.py", line 136, in process_document
+    result = self.vlm_extractor.extract_rejection_letter(image_bytes, mime_type)
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\vlm_extractor.py", line 145, in extract_rejection_letter
+    return self._extract_anthropic(image_bytes, mime_type, REJECTION_EXTRACTION_PROMPT, RejectionLetter, "extract_rejection_letter") if self.provider == 'anthropic' else self._extract_openai(image_bytes, mime_type, REJECTION_EXTRACTION_PROMPT, RejectionLetter)
+  File "C:\Users\Ajay\.gemini\antigravity\scratch\claimguard-ai\backend\app\extraction\vlm_extractor.py", line 47, in _extract_anthropic
+    response = self.client.messages.create(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_utils\_utils.py", line 275, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\resources\messages.py", line 888, in create
+    return self._post(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 1279, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 956, in request
+    return self._request(
+  File "C:\Users\Ajay\AppData\Roaming\Python\Python310\site-packages\anthropic\_base_client.py", line 1060, in _request
+    raise self._make_status_error_from_response(err.response) from None
+anthropic.AuthenticationError: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'API key is invalid.'}, 'request_id': None}
+
+Pipeline init. use_vlm=True, provider=gemini
+Pipeline init. use_vlm=True, provider=gemini
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=True, provider=openai
+Pipeline init. use_vlm=False, provider=openai
+Pipeline init. use_vlm=False, provider=openai
