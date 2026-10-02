@@ -1,5 +1,5 @@
 # ClaimGuard Production Readiness Handoff
-Updated: 2026-10-02 (portal retries require a stable secret; backend suite has 3 extraction test failures)
+Updated: 2026-10-02 (Step 2 verified; DB-outage and live-provider behavior remain NOT VERIFIED)
 
 ## Architecture rule
 AI reads the case; deterministic rules verify the case.
@@ -50,15 +50,14 @@ Raw manifest: docs/security-scan-1.json (do not read whole; ~53 KB)
 Regression tests were added and shown to fail before / pass after each fix.
 Not covered by scan: live providers, PDF load tests, OIDC proxy, files outside the
 28 changed ones. Duplicate-worker candidate dismissed (single-instance Render only).
-Check test_ext.py: scratch file? The backend test directory suite has now been
-run; see exact results below.
+The backend scratch scripts and root document runners were handled in Step 2; see exact results below.
 Final review must be a fresh scan of the whole tree.
 
 ## Next (in order; start at first unfinished)
 1. Job concurrency / duplicate / retry / restart-recovery checks — implemented
    and locally verified for the covered cases; DB outage behavior remains NOT
    VERIFIED.
-2. Full backend suite; fix failures (also confirms the scan fixes: findings 1-3)
+2. Full backend suite and mutation verification — COMPLETE (2026-10-02; see Step 2 results).
 3. Frontend suite + production build
 4. Migration / API-contract / import-startup checks
 5. Broader provenance (policy clauses, critical fields)
@@ -125,9 +124,49 @@ Final review must be a fresh scan of the whole tree.
 - After requiring the retry secret, portal tests from `backend/`:
   `.\venv\Scripts\python.exe -m pytest tests/test_patient_portal_access.py -q` — 9 passed, 1 deprecation warning.
 - Live provider behavior and prolonged DB-outage persistence are NOT VERIFIED
-  and remain release blockers. Next item: Step 2, full-suite failures and
-  confirmation of the previously applied scan fixes.
+  and remain release blockers.
 
+## Step 2 Results (2026-10-02)
 
-## Step 2 Not Finished Yet
-The task also asked to confirm that each earlier scan fix (evidence page and amount binding, PDF pixel budget and temp files, upload cleanup) has a regression test that fails when the fix is removed. This must be confirmed before proceeding.
+- Preflight was clean on `wip/release-candidate` at ancestor `71abe92`.
+- Moved `test_fail_docs.py` to `scripts/make_fail_docs.py` and
+  `test_new_docs.py` to `scripts/make_new_docs.py`. Their generation and API
+  activity now runs only under `main()`; generated files keep their original
+  repository-relative paths. Also moved the import-time API runner
+  `test_new_docs2.py` to `scripts/run_new_docs_analysis.py` and guarded it with
+  `main()` so root pytest does not send network requests during import.
+- Root pytest command from the repository root:
+  `& '.\backend\venv\Scripts\python.exe' -m pytest -q --tb=no` —
+  345 passed, 2 skipped, 0 collection errors. Immediately afterward,
+  `git status --short --branch` showed a clean tree; no tracked PDFs were
+  regenerated or modified. Backend-only discovery runs one fewer test.
+- Scratch files removed in commit `71abe92` (recoverable from checkpoint
+  commit `f59a871`): `test_ext.py`, `backend/test_extraction.py`,
+  `backend/test_gemini.py`, `backend/test_json.py`, `backend/test_subsets.py`,
+  and `backend/test_total_approved.py`.
+- Mutation verification was run with a clean tree before each mutation and a
+  one-file-only `git diff --stat`. Every mutation failed its regression for
+  the intended reason; each source file was restored individually and its
+  regression passed afterward:
+
+  | Fix | Regression test(s) | Failed when removed | Passed after restore |
+  | --- | --- | --- | --- |
+  | Exact numeric token, cited OCR page, and total-field label | `test_amount_substring_must_match_complete_numeric_token_and_claimed_page`; `test_amount_citation_on_wrong_page_is_not_accepted`; `test_total_amount_requires_a_total_field_label_not_an_unrelated_payment` | Yes (each targeted test failed) | Yes (each targeted test passed) |
+  | PDF aggregate pixel budget before rendering and unique page temp names | `test_pdf_aggregate_pixel_budget_rejects_before_rendering`; `test_pdf_temporary_page_names_do_not_collide_across_documents` | Yes (both failed) | Yes (both passed) |
+  | Cleanup of earlier saved uploads after any later save exception | `test_portal_submission_cleans_prior_files_when_later_storage_save_fails` | Yes (orphaned upload remained) | Yes |
+  | Pipeline forwards `max_pages` and `max_total_pixels` | `tests/test_extraction_fail_closed.py` (three limit assertions) | Yes (3 failed with captured values `None`) | Yes (5 passed) |
+
+- Changed `backend/tests/test_extraction_fail_closed.py` so preparation stubs
+  record explicit limit arguments and the test bodies assert the configured
+  values. No permanent production-code change was needed or retained.
+- From `backend/`, the final full-suite command was
+  `& '.\venv\Scripts\python.exe' -m pytest tests -q` — 344 passed,
+  2 skipped, 0 failed. One deprecation warning was reported by Starlette.
+- The root run reported one more passing test than the backend-only run; both
+  commands completed with zero failures.
+- Remaining Step 1 risks: prolonged DB-outage status persistence is NOT
+  VERIFIED. The global job cap is not a per-IP rate limit; review that alongside
+  edge rate controls later. Live VLM behavior is NOT VERIFIED. These remain
+  release blockers.
+- Step 2 is complete. Next unfinished item is Step 3 (frontend suite and
+  production build); it was not run in this task.

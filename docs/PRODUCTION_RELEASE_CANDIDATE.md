@@ -1,6 +1,6 @@
 # ClaimGuard AI production release candidate
 
-Status as of 2026-10-02: **RELEASE CANDIDATE - BLOCKED BY SPECIFIC ITEMS**. See [HANDOFF.md](../HANDOFF.md) for current verification and the next unfinished item.
+Status as of 2026-10-02: **RELEASE CANDIDATE - BLOCKED BY SPECIFIC ITEMS**. Root pytest completed with 345 passed and 2 skipped; the backend suite completed with 344 passed and 2 skipped. Step 2 mutation checks are recorded in [HANDOFF.md](../HANDOFF.md); live-provider and prolonged DB-outage behavior remain unverified.
 
 ## Patient portal API
 
