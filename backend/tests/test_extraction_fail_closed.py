@@ -3,7 +3,11 @@ from app.extraction.pipeline import ExtractionPipeline
 
 
 def _stub_document(monkeypatch, pipeline):
-    monkeypatch.setattr(extraction_module, "prepare_document", lambda _path: [object()])
+    def fake_prepare_document(path, *, max_pages=None, max_total_pixels=None, **_):
+        assert max_pages is not None, "max_pages limit not passed"
+        assert max_total_pixels is not None, "max_total_pixels limit not passed"
+        return [object()]
+    monkeypatch.setattr(extraction_module, "prepare_document", fake_prepare_document)
     monkeypatch.setattr(pipeline.ocr_engine, "extract_with_confidence", lambda _page: ("recognized text", 1.0))
     monkeypatch.setattr(pipeline.ocr_engine, "extract_table", lambda _page: [])
     monkeypatch.setattr(pipeline, "_convert_image_to_bytes", lambda _page: b"page")
@@ -71,7 +75,11 @@ def test_vlm_receives_every_page_of_a_pdf(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     captured = {}
     pages = [object(), object()]
-    monkeypatch.setattr(extraction_module, "prepare_document", lambda _path: pages)
+    def fake_prepare_document(path, *, max_pages=None, max_total_pixels=None, **_):
+        assert max_pages is not None, "max_pages limit not passed"
+        assert max_total_pixels is not None, "max_total_pixels limit not passed"
+        return pages
+    monkeypatch.setattr(extraction_module, "prepare_document", fake_prepare_document)
 
     class OCREngineStub:
         def extract_with_confidence(self, _page):
