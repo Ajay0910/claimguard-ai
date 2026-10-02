@@ -1,5 +1,5 @@
 # ClaimGuard Production Readiness Handoff
-Updated: 2026-10-02 (analysis job controls completed; backend suite has 3 unrelated failures)
+Updated: 2026-10-02 (transient database commit failure covered; backend suite has 3 extraction test failures)
 
 ## Architecture rule
 AI reads the case; deterministic rules verify the case.
@@ -90,9 +90,11 @@ Final review must be a fresh scan of the whole tree.
   use a database compare-and-set so only one worker owns a pending run.
 - Regression tests cover queue-full behavior in both APIs, aggregate byte
   rejection before persistent save, portal retry idempotency, storage cleanup,
-  concurrent workers, restart recovery and provider failure. DB-unavailable
-  behavior is NOT VERIFIED; if storage/database failures prevent the failure
-  transaction from committing, recovery depends on the next startup.
+  concurrent workers, restart recovery, provider failure and a transient result
+  commit failure. The transient commit failure rolls back and marks the job
+  `FAILED` without result or verdict rows. A prolonged DB outage is NOT VERIFIED:
+  while the database is unavailable, no durable status update can be recorded;
+  the next startup recovers any surviving `RUNNING` state.
 - Regression-first evidence: queue-cap test initially returned 200 instead of
   503; aggregate-budget test initially returned 200 instead of 413; restart
   test initially found stale financial result data on a requeued run.
@@ -109,6 +111,9 @@ Final review must be a fresh scan of the whole tree.
   session is scoped to Step 1. The root-level `python -m pytest -q` collection
   also stopped on the scratch script `backend/test_gemini.py` because its
   extraction result was `None`.
-- Live provider behavior and DB-outage persistence are NOT VERIFIED and remain
-  release blockers. Next item: Step 2, full-suite failures and confirmation of
-  the previously applied scan fixes.
+- From `backend/`, lifecycle tests after adding transient DB coverage:
+  `.\venv\Scripts\python.exe -m pytest tests/test_analysis_job_lifecycle.py -q`
+  — 5 passed, 1 deprecation warning.
+- Live provider behavior and prolonged DB-outage persistence are NOT VERIFIED
+  and remain release blockers. Next item: Step 2, full-suite failures and
+  confirmation of the previously applied scan fixes.

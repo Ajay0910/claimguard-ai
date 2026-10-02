@@ -4,7 +4,7 @@ from types import ModuleType
 
 import pytest
 from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app import database as database_module
 from app.api import analysis as analysis_module
@@ -150,6 +150,61 @@ async def test_provider_failure_marks_job_failed_without_financial_result(tmp_pa
         assert run.result_data is None
         assert run.total_monetary_impact is None
         assert claim.status == "FAILED"
+
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_transient_result_commit_failure_rolls_back_and_marks_job_failed(tmp_path, monkeypatch):
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'db-commit-failure.db'}")
+
+    class FailFinalCommitSession(AsyncSession):
+        def __init__(self, *args, **kwargs):
+            self.commit_count = 0
+            super().__init__(*args, **kwargs)
+
+        async def commit(self):
+            self.commit_count += 1
+            if self.commit_count == 2:
+                raise RuntimeError("injected transient result commit failure")
+            await super().commit()
+
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    sessions = async_sessionmaker(engine, class_=FailFinalCommitSession, expire_on_commit=False)
+    monkeypatch.setattr(analysis_module, "AsyncSessionLocal", sessions)
+    monkeypatch.setattr(database_module, "engine", engine)
+    monkeypatch.setattr(analysis_module, "_broadcast_claim_status", lambda *_args: asyncio.sleep(0))
+    monkeypatch.setattr(analysis_module, "ExtractionPipeline", lambda **_kwargs: object())
+
+    class ForensicsResult:
+        def model_dump(self, **_kwargs):
+            return {}
+
+    class Forensics:
+        def run(self, *_args, **_kwargs):
+            return ForensicsResult()
+
+    fake_forensics_module = ModuleType("app.forensics.engine")
+    fake_forensics_module.ForensicsEngine = Forensics
+    monkeypatch.setitem(sys.modules, "app.forensics.engine", fake_forensics_module)
+
+    async with sessions() as db:
+        claim = Claim(id="db-failure-claim", patient_name="Patient", status="QUEUED")
+        db.add_all([claim, AnalysisRun(id="db-failure-run", claim_id=claim.id, status="PENDING")])
+        await db.commit()
+
+    await analysis_module.run_analysis_pipeline("db-failure-claim", "db-failure-run")
+
+    async with sessions() as db:
+        run = await db.get(AnalysisRun, "db-failure-run")
+        claim = await db.get(Claim, "db-failure-claim")
+        verdicts = (await db.execute(select(RuleVerdictRecord))).scalars().all()
+        assert run.status == "FAILED"
+        assert run.result_data is None
+        assert run.total_monetary_impact is None
+        assert claim.status == "FAILED"
+        assert verdicts == []
 
     await engine.dispose()
 
