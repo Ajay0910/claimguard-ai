@@ -1,5 +1,5 @@
 # ClaimGuard Production Readiness Handoff
-Updated: 2026-10-02 (startup worker cap verified; backend suite has 3 extraction test failures)
+Updated: 2026-10-02 (portal retries require a stable secret; backend suite has 3 extraction test failures)
 
 ## Architecture rule
 AI reads the case; deterministic rules verify the case.
@@ -89,7 +89,9 @@ Final review must be a fresh scan of the whole tree.
   state returns to `QUEUED`. The result is committed atomically with the job's
   `COMPLETED` state.
 - Portal-secret duplicate submission remains idempotent. Concurrent workers
-  use a database compare-and-set so only one worker owns a pending run.
+  use a database compare-and-set so only one worker owns a pending run. Portal
+  submissions now require the stable high-entropy secret on the initial request;
+  reusing it on retry returns the existing claim.
 - Regression tests cover queue-full behavior in both APIs, aggregate byte
   rejection before persistent save, portal retry idempotency, storage cleanup,
   concurrent workers, bounded startup recovery, provider failure and a
@@ -100,14 +102,15 @@ Final review must be a fresh scan of the whole tree.
 - Regression-first evidence: queue-cap test initially returned 200 instead of
   503; aggregate-budget test initially returned 200 instead of 413; restart
   test initially found stale financial result data on a requeued run; startup
-  backlog test initially ran 3 workers concurrently with a cap of 1.
+  backlog test initially ran 3 workers concurrently with a cap of 1; a portal
+  submission without a retry secret initially returned 200 instead of 400.
 - From `backend/`, focused command before the final provider-failure regression:
   `.\venv\Scripts\python.exe -m pytest tests/test_analysis_job_lifecycle.py tests/test_patient_portal_access.py tests/test_analysis_fail_closed.py -q`
   — 12 passed. The provider-failure regression then passed separately:
   `.\venv\Scripts\python.exe -m pytest tests/test_analysis_job_lifecycle.py::test_provider_failure_marks_job_failed_without_financial_result -q`
   — 1 passed.
 - From `backend/`, full backend suite command:
-  `.\venv\Scripts\python.exe -m pytest tests -q` — 340 passed, 3 failed,
+  `.\venv\Scripts\python.exe -m pytest tests -q` — 341 passed, 3 failed,
   2 skipped. Failures are the three `test_extraction_fail_closed.py` cases
   whose `prepare_document` stubs do not accept the new `max_pages` and
   `max_total_pixels` keyword arguments. They were not changed because this
@@ -119,6 +122,8 @@ Final review must be a fresh scan of the whole tree.
   — 5 passed, 1 deprecation warning.
 - Latest focused Step 1 command from `backend/`:
   `.\venv\Scripts\python.exe -m pytest tests/test_analysis_job_lifecycle.py tests/test_patient_portal_access.py tests/test_analysis_fail_closed.py -q` — 15 passed, 1 deprecation warning.
+- After requiring the retry secret, portal tests from `backend/`:
+  `.\venv\Scripts\python.exe -m pytest tests/test_patient_portal_access.py -q` — 9 passed, 1 deprecation warning.
 - Live provider behavior and prolonged DB-outage persistence are NOT VERIFIED
   and remain release blockers. Next item: Step 2, full-suite failures and
   confirmation of the previously applied scan fixes.

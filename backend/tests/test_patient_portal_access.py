@@ -149,6 +149,37 @@ def test_portal_submission_secret_is_hash_only_and_idempotent(tmp_path, monkeypa
     asyncio.run(engine.dispose())
 
 
+def test_portal_submission_requires_stable_secret_for_idempotent_retry(tmp_path, monkeypatch):
+    app, sessions, engine = _portal_test_app(tmp_path, monkeypatch)
+    upload_root = tmp_path / "uploads-missing-idempotency-secret"
+    monkeypatch.setattr(portal.settings, "UPLOAD_DIR", str(upload_root))
+    payload = {
+        "patient_name": "Retry Patient",
+        "patient_email": "patient@example.test",
+        "patient_phone": "",
+        "hospital_bill": ("bill.pdf", b"%PDF-1.4\nbill", "application/pdf"),
+        "insurance_policy": ("policy.pdf", b"%PDF-1.4\npolicy", "application/pdf"),
+        "rejection_letter": ("decision.pdf", b"%PDF-1.4\ndecision", "application/pdf"),
+    }
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/portal/submit",
+            data={key: val for key, val in payload.items() if not isinstance(val, tuple)},
+            files={key: val for key, val in payload.items() if isinstance(val, tuple)},
+        )
+
+    assert response.status_code == 400
+    assert not list(upload_root.rglob("*"))
+
+    async def inspect():
+        async with sessions() as db:
+            assert (await db.execute(select(Claim))).scalars().all() == []
+
+    asyncio.run(inspect())
+    asyncio.run(engine.dispose())
+
+
 def test_portal_submission_cleans_prior_files_when_later_storage_save_fails(tmp_path, monkeypatch):
     app, sessions, engine = _portal_test_app(tmp_path, monkeypatch)
     upload_root = tmp_path / "uploads-on-storage-error"
@@ -180,6 +211,7 @@ def test_portal_submission_cleans_prior_files_when_later_storage_save_fails(tmp_
             "/api/portal/submit",
             data={key: val for key, val in payload.items() if not isinstance(val, tuple)},
             files={key: val for key, val in payload.items() if isinstance(val, tuple)},
+            headers={"X-Portal-Secret": "Q" * 43},
         )
 
     assert response.status_code == 500
@@ -225,6 +257,7 @@ def test_portal_rejects_submission_when_durable_analysis_queue_is_full(tmp_path,
             "/api/portal/submit",
             data={key: val for key, val in payload.items() if not isinstance(val, tuple)},
             files={key: val for key, val in payload.items() if isinstance(val, tuple)},
+            headers={"X-Portal-Secret": "B" * 43},
         )
 
     assert response.status_code == 503
@@ -265,6 +298,7 @@ def test_portal_enforces_total_submission_byte_budget_before_saving(tmp_path, mo
             "/api/portal/submit",
             data={key: val for key, val in payload.items() if not isinstance(val, tuple)},
             files={key: val for key, val in payload.items() if isinstance(val, tuple)},
+            headers={"X-Portal-Secret": "D" * 43},
         )
 
     assert response.status_code == 413

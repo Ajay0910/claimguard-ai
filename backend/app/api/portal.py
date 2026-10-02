@@ -11,7 +11,7 @@ import os
 from ..database import get_db
 from ..models.claim import Claim, Document, AnalysisRun
 from ..config import settings, get_cors_origins
-from ..security.auth import generate_portal_secret, hash_portal_secret, verify_portal_secret
+from ..security.auth import hash_portal_secret, verify_portal_secret
 from ..utils.file_handler import save_upload
 from ..utils.analysis_jobs import ensure_analysis_capacity, serialize_analysis_admission
 
@@ -131,6 +131,8 @@ async def portal_submit(
         raise HTTPException(status_code=400, detail="A valid email address is required.")
     if len(patient_phone) > 32 or (patient_phone and not patient_phone.replace("+", "").replace(" ", "").replace("-", "").isdigit()):
         raise HTTPException(status_code=400, detail="Phone number format is invalid.")
+    if not supplied_portal_secret:
+        raise HTTPException(status_code=400, detail="A stable portal secret is required so retries cannot create duplicate claims.")
 
     uploads = [hospital_bill, insurance_policy, rejection_letter]
     total_upload_bytes = 0
@@ -147,7 +149,7 @@ async def portal_submit(
 
     # Create claim. The raw capability is returned once; only its digest is persisted.
     claim_id = str(uuid.uuid4())
-    portal_token = supplied_portal_secret or generate_portal_secret()
+    portal_token = supplied_portal_secret
     if len(portal_token) < 40 or len(portal_token) > 128:
         raise HTTPException(status_code=400, detail="Portal secret must be a 256-bit URL-safe value.")
     portal_token_hash = hash_portal_secret(portal_token)
