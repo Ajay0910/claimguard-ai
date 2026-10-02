@@ -13,3 +13,7 @@ data/synthetic_bills/
 data/synthetic_policies/
 data/synthetic_rejections/
 venv/
+
+docs/security-scan-1.md
+
+docs/security-scan-1.json
