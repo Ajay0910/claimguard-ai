@@ -127,3 +127,7 @@ Final review must be a fresh scan of the whole tree.
 - Live provider behavior and prolonged DB-outage persistence are NOT VERIFIED
   and remain release blockers. Next item: Step 2, full-suite failures and
   confirmation of the previously applied scan fixes.
+
+
+## Step 2 Not Finished Yet
+The task also asked to confirm that each earlier scan fix (evidence page and amount binding, PDF pixel budget and temp files, upload cleanup) has a regression test that fails when the fix is removed. This must be confirmed before proceeding.
