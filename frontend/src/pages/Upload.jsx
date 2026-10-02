@@ -244,7 +244,9 @@ export default function Upload() {
       setIsAnalyzing(false);
       toast.dismiss('analysis-start');
       toast.error('Pipeline Execution Failed', {
-        description: error?.message || 'Failed to initiate analysis pipeline.',
+        description: error?.response?.status === 503
+          ? (error?.response?.data?.detail || 'Analysis capacity is full. Please retry shortly.')
+          : (error?.response?.data?.detail || error?.message || 'Failed to initiate analysis pipeline.'),
       });
     }
   };

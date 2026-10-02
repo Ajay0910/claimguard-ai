@@ -199,7 +199,7 @@ def test_portal_rejects_submission_when_durable_analysis_queue_is_full(tmp_path,
     monkeypatch.setattr(
         portal,
         "settings",
-        SimpleNamespace(UPLOAD_DIR=str(upload_root), MAX_UPLOAD_SIZE_MB=25, MAX_PENDING_ANALYSIS_JOBS=1),
+        SimpleNamespace(UPLOAD_DIR=str(upload_root), MAX_UPLOAD_SIZE_MB=25, MAX_SUBMISSION_SIZE_MB=50, MAX_PENDING_ANALYSIS_JOBS=1),
     )
     monkeypatch.setattr(portal, "_trigger_analysis", lambda *_args: asyncio.sleep(0))
 
@@ -228,12 +228,51 @@ def test_portal_rejects_submission_when_durable_analysis_queue_is_full(tmp_path,
         )
 
     assert response.status_code == 503
+    assert response.headers["Retry-After"] == "30"
     assert list(upload_root.rglob("*.upload")) == []
 
     async def inspect():
         async with sessions() as db:
             claims = (await db.execute(select(Claim))).scalars().all()
             assert len(claims) == 1 and claims[0].id == "already-queued"
+
+    asyncio.run(inspect())
+    asyncio.run(engine.dispose())
+
+
+def test_portal_enforces_total_submission_byte_budget_before_saving(tmp_path, monkeypatch):
+    app, sessions, engine = _portal_test_app(tmp_path, monkeypatch)
+    upload_root = tmp_path / "uploads-total-budget"
+    monkeypatch.setattr(
+        portal,
+        "settings",
+        SimpleNamespace(
+            UPLOAD_DIR=str(upload_root), MAX_UPLOAD_SIZE_MB=25,
+            MAX_SUBMISSION_SIZE_MB=2, MAX_PENDING_ANALYSIS_JOBS=10,
+        ),
+    )
+    payload = {
+        "patient_name": "Budget Patient",
+        "patient_email": "patient@example.test",
+        "patient_phone": "",
+        "hospital_bill": ("bill.pdf", b"%PDF-1.4\n" + b"a" * (1024 * 1024), "application/pdf"),
+        "insurance_policy": ("policy.pdf", b"%PDF-1.4\n" + b"b" * (1024 * 1024), "application/pdf"),
+        "rejection_letter": ("decision.pdf", b"%PDF-1.4\n" + b"c" * (1024 * 1024), "application/pdf"),
+    }
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/portal/submit",
+            data={key: val for key, val in payload.items() if not isinstance(val, tuple)},
+            files={key: val for key, val in payload.items() if isinstance(val, tuple)},
+        )
+
+    assert response.status_code == 413
+    assert not list(upload_root.rglob("*"))
+
+    async def inspect():
+        async with sessions() as db:
+            assert (await db.execute(select(Claim))).scalars().all() == []
 
     asyncio.run(inspect())
     asyncio.run(engine.dispose())

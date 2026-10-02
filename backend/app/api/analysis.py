@@ -1,17 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from typing import Optional
 import uuid
 from datetime import datetime
 
 from ..database import AsyncSessionLocal, get_db
-from ..models.claim import Claim, Document, AnalysisRun, RuleVerdictRecord
+from ..models.claim import Claim, Document, AnalysisRun, RuleVerdictRecord, EvidenceLedgerRecord
 from ..extraction.pipeline import ExtractionPipeline
 from ..rules.engine import RuleEngine
 from ..utils.audit_trail import AuditTrail
 from ..schemas.analysis_result import AnalysisResult
 from ..security.auth import require_staff_access
+from ..utils.analysis_jobs import ensure_analysis_capacity, serialize_analysis_admission
+from ..config import settings
 
 router = APIRouter(prefix='/api', tags=['analysis'], dependencies=[Depends(require_staff_access)])
 
@@ -243,7 +245,7 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
             
         except Exception as e:
             import logging
-            logging.getLogger(__name__).error("Analysis pipeline failed for claim %s (%s)", claim_id, type(e).__name__)
+            logging.getLogger(__name__).error("Analysis pipeline failed for claim %s (%s: %s)", claim_id, type(e).__name__, getattr(e, "name", ""))
             await db.rollback()
             # Mark as failed in a new transaction
             async with AsyncSessionLocal() as session2:
@@ -265,6 +267,7 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
                 await _broadcast_claim_status(claim_id, "FAILED")
 
 @router.post('/analyze/{claim_id}')
+@serialize_analysis_admission
 async def trigger_analysis(
     claim_id: str,
     background_tasks: BackgroundTasks,
@@ -288,6 +291,8 @@ async def trigger_analysis(
     active_run = active_result.scalars().first()
     if active_run:
         return {"analysis_run_id": active_run.id, "status": active_run.status}
+
+    await ensure_analysis_capacity(db, settings)
 
     # A compare-and-set on the claim prevents two concurrent callers from creating
     # separate runs after both observed an empty active-run query.
@@ -331,10 +336,26 @@ async def trigger_analysis(
 async def resume_analysis_jobs():
     """Requeue interrupted jobs at single-instance startup and start pending work."""
     async with AsyncSessionLocal() as db:
-        interrupted = await db.execute(update(AnalysisRun).where(AnalysisRun.status == "RUNNING").values(status="PENDING"))
+        interrupted_result = await db.execute(select(AnalysisRun.id).where(AnalysisRun.status == "RUNNING"))
+        interrupted_ids = list(interrupted_result.scalars().all())
+        if interrupted_ids:
+            await db.execute(
+                update(AnalysisRun)
+                .where(AnalysisRun.id.in_(interrupted_ids))
+                .values(
+                    status="PENDING",
+                    result_data=None,
+                    forensics_data=None,
+                    overall_status=None,
+                    total_monetary_impact=None,
+                    completed_at=None,
+                )
+            )
+            await db.execute(delete(EvidenceLedgerRecord).where(EvidenceLedgerRecord.analysis_run_id.in_(interrupted_ids)))
+            await db.execute(delete(RuleVerdictRecord).where(RuleVerdictRecord.analysis_run_id.in_(interrupted_ids)))
         pending = await db.execute(select(AnalysisRun.id, AnalysisRun.claim_id).where(AnalysisRun.status == "PENDING"))
         jobs = pending.all()
-        if interrupted.rowcount:
+        if interrupted_ids:
             await db.execute(update(Claim).where(Claim.status.in_(["ANALYZING", "EXTRACTING"])).values(status="QUEUED"))
         await db.commit()
     import asyncio

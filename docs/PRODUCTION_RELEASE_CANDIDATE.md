@@ -1,14 +1,20 @@
 # ClaimGuard AI production release candidate
 
+Status as of 2026-10-02: **RELEASE CANDIDATE - BLOCKED BY SPECIFIC ITEMS**. See [HANDOFF.md](../HANDOFF.md) for current verification and the next unfinished item.
+
 ## Patient portal API
 
-- `POST /api/portal/submit` accepts multipart form fields `patient_name`, `patient_email`, `patient_phone`, `hospital_bill`, `insurance_policy`, and `rejection_letter`. All three documents are required for cross-document verification. Each file is limited by `MAX_UPLOAD_SIZE_MB` (25 MB by default); bytes are checked against PDF/JPEG/PNG/TIFF signatures and stored under a generated filename.
+- `POST /api/portal/submit` accepts multipart form fields `patient_name`, `patient_email`, `patient_phone`, `hospital_bill`, `insurance_policy`, and `rejection_letter`. All three documents are required for cross-document verification. Each file is limited by `MAX_UPLOAD_SIZE_MB` (25 MB by default), and all files together are limited by `MAX_SUBMISSION_SIZE_MB` (50 MB by default). The combined byte total is checked before persistent files are saved. Bytes are checked against PDF/JPEG/PNG/TIFF signatures and stored under a generated filename.
 - A successful response returns `claim_id`, `portal_secret`, `status`, and `tracking_url`. The high-entropy secret is returned once. The database stores only its SHA-256 digest. Patients must save the key; support cannot retrieve it from the database.
 - `GET /api/portal/status/{claim_id}` requires `X-Portal-Secret`. Unknown claim IDs and wrong/missing secrets return the same 404 response.
 - `GET /api/portal/{claim_id}/appeal` also requires `X-Portal-Secret` and returns a draft only for a completed `MISMATCH_DETECTED` result. It is an AI-assisted draft and must be reviewed before sending.
 - `WS /api/portal/ws/claim/{claim_id}` requires the raw secret as the first WebSocket message over WSS. The server sends no claim data before validation. Do not place the secret in a URL.
 
 ## Staff API and trusted OIDC proxy
+
+Analysis admission is capped globally by `MAX_PENDING_ANALYSIS_JOBS` (4 by
+default, counting pending and running jobs). When full, both portal submission
+and staff analysis requests return HTTP 503 with `Retry-After: 30`.
 
 The `/api/upload`, `/api/claims`, `/api/stats`, `/api/analyze`, and `/api/reports` routes require all three trusted proxy values:
 

@@ -13,6 +13,7 @@ from ..models.claim import Claim, Document, AnalysisRun
 from ..config import settings, get_cors_origins
 from ..security.auth import generate_portal_secret, hash_portal_secret, verify_portal_secret
 from ..utils.file_handler import save_upload
+from ..utils.analysis_jobs import ensure_analysis_capacity, serialize_analysis_admission
 
 router = APIRouter(prefix="/api/portal", tags=["portal"])
 
@@ -106,6 +107,7 @@ async def claim_websocket(websocket: WebSocket, claim_id: str, db: AsyncSession 
 
 # ── Portal Submit Endpoint ────────────────────────────────────────────
 @router.post("/submit")
+@serialize_analysis_admission
 async def portal_submit(
     patient_name: str = Form(...),
     patient_email: str = Form(...),
@@ -130,6 +132,19 @@ async def portal_submit(
     if len(patient_phone) > 32 or (patient_phone and not patient_phone.replace("+", "").replace(" ", "").replace("-", "").isdigit()):
         raise HTTPException(status_code=400, detail="Phone number format is invalid.")
 
+    uploads = [hospital_bill, insurance_policy, rejection_letter]
+    total_upload_bytes = 0
+    for upload_file in uploads:
+        upload_file.file.seek(0, os.SEEK_END)
+        total_upload_bytes += upload_file.file.tell()
+        upload_file.file.seek(0)
+    submission_limit = settings.MAX_SUBMISSION_SIZE_MB * 1024 * 1024
+    if total_upload_bytes > submission_limit:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Combined documents exceed the {settings.MAX_SUBMISSION_SIZE_MB}MB submission limit.",
+        )
+
     # Create claim. The raw capability is returned once; only its digest is persisted.
     claim_id = str(uuid.uuid4())
     portal_token = supplied_portal_secret or generate_portal_secret()
@@ -146,6 +161,8 @@ async def portal_submit(
             "message": "This submission was already received.",
             "tracking_url": f"/track/{existing_claim.id}",
         }
+
+    await ensure_analysis_capacity(db, settings)
 
     claim = Claim(
         id=claim_id,

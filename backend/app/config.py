@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     VLM_PROVIDER: str = "anthropic"
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE_MB: int = 25
+    MAX_SUBMISSION_SIZE_MB: int = 50
+    MAX_PENDING_ANALYSIS_JOBS: int = 4
     MAX_DOCUMENT_PAGES: int = 30
     MAX_DOCUMENT_TOTAL_PIXELS: int = 40_000_000
     DEBUG: bool = False
@@ -52,7 +54,7 @@ def validate_production_settings(config: Settings = settings) -> None:
         errors.append("CORS_ALLOWED_ORIGINS entries must be origins without paths or query strings")
     if not config.UPLOAD_DIR.startswith("/var/data/"):
         errors.append("UPLOAD_DIR must point to the persistent Render disk mounted under /var/data")
-    if config.MAX_UPLOAD_SIZE_MB < 1 or not 1 <= config.MAX_DOCUMENT_PAGES <= 100:
+    if config.MAX_UPLOAD_SIZE_MB < 1 or config.MAX_SUBMISSION_SIZE_MB < 1 or config.MAX_PENDING_ANALYSIS_JOBS < 1 or not 1 <= config.MAX_DOCUMENT_PAGES <= 100:
         errors.append("Upload and document page limits must be set within supported production bounds")
     if not 1_000_000 <= config.MAX_DOCUMENT_TOTAL_PIXELS <= 200_000_000:
         errors.append("MAX_DOCUMENT_TOTAL_PIXELS must be between 1,000,000 and 200,000,000")

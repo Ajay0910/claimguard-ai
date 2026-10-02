@@ -1,5 +1,5 @@
 # ClaimGuard Production Readiness Handoff
-Updated: 2026-10-02 (Account 1 hit usage limit; resets 2026-10-31)
+Updated: 2026-10-02 (analysis job controls completed; backend suite has 3 unrelated failures)
 
 ## Architecture rule
 AI reads the case; deterministic rules verify the case.
@@ -42,19 +42,22 @@ Raw manifest: docs/security-scan-1.json (do not read whole; ~53 KB)
    stand in for a bill total).
 2. HIGH, CWE-400: public PDF uploads can exhaust memory (api/portal.py L108-125).
    PARTLY FIXED: pixel budget before rendering + temp-file collision fixed.
-   OPEN: bound active analysis jobs (queue/worker limit) and byte budget.
+   CLOSED IN CODE: bound active analysis jobs (queue/worker limit) and aggregate
+   submission byte budget. See Step 1 results below; DB outage recovery remains
+   NOT VERIFIED.
 3. MEDIUM, CWE-459: unexpected upload errors orphan PHI files (api/portal.py L186-207).
    FIXED (cleanup on any exception), verified by regression test.
 Regression tests were added and shown to fail before / pass after each fix.
 Not covered by scan: live providers, PDF load tests, OIDC proxy, files outside the
 28 changed ones. Duplicate-worker candidate dismissed (single-instance Render only).
-Check test_ext.py: scratch file? Full backend suite not yet re-run after fixes.
+Check test_ext.py: scratch file? The backend test directory suite has now been
+run; see exact results below.
 Final review must be a fresh scan of the whole tree.
 
 ## Next (in order; start at first unfinished)
-1. Job concurrency / duplicate / retry / restart-recovery checks  <- interrupted here
-   INCLUDING a cap on active analysis jobs and a total byte budget per
-   submission (open part of scan finding 2)
+1. Job concurrency / duplicate / retry / restart-recovery checks — implemented
+   and locally verified for the covered cases; DB outage behavior remains NOT
+   VERIFIED.
 2. Full backend suite; fix failures (also confirms the scan fixes: findings 1-3)
 3. Frontend suite + production build
 4. Migration / API-contract / import-startup checks
@@ -69,4 +72,43 @@ Final review must be a fresh scan of the whole tree.
 12. Final release gate and verdict
 
 ## Last test results
-(paste exact pytest / npm test / build output here after each session)
+
+### Step 1: analysis job lifecycle and intake limits (2026-10-02)
+
+- Added global active-job admission control across public and staff APIs. The
+  default cap is 4 `PENDING` plus `RUNNING` jobs; a full queue returns HTTP 503
+  with `Retry-After: 30`. Admission is serialized for the configured single
+  Render instance / single Uvicorn worker. Multi-process admission is NOT
+  VERIFIED and is outside the current Render configuration.
+- Added a 50 MB aggregate patient submission limit, checked across all three
+  uploaded documents before any claim or persistent upload file is created.
+- Startup recovery clears result fields, verdict rows and evidence-ledger rows
+  for interrupted `RUNNING` jobs before requeueing them as `PENDING`; claim
+  state returns to `QUEUED`. The result is committed atomically with the job's
+  `COMPLETED` state.
+- Portal-secret duplicate submission remains idempotent. Concurrent workers
+  use a database compare-and-set so only one worker owns a pending run.
+- Regression tests cover queue-full behavior in both APIs, aggregate byte
+  rejection before persistent save, portal retry idempotency, storage cleanup,
+  concurrent workers, restart recovery and provider failure. DB-unavailable
+  behavior is NOT VERIFIED; if storage/database failures prevent the failure
+  transaction from committing, recovery depends on the next startup.
+- Regression-first evidence: queue-cap test initially returned 200 instead of
+  503; aggregate-budget test initially returned 200 instead of 413; restart
+  test initially found stale financial result data on a requeued run.
+- From `backend/`, focused command before the final provider-failure regression:
+  `.\venv\Scripts\python.exe -m pytest tests/test_analysis_job_lifecycle.py tests/test_patient_portal_access.py tests/test_analysis_fail_closed.py -q`
+  — 12 passed. The provider-failure regression then passed separately:
+  `.\venv\Scripts\python.exe -m pytest tests/test_analysis_job_lifecycle.py::test_provider_failure_marks_job_failed_without_financial_result -q`
+  — 1 passed.
+- From `backend/`, full backend suite command:
+  `.\venv\Scripts\python.exe -m pytest tests -q` — 338 passed, 3 failed,
+  2 skipped. Failures are the three `test_extraction_fail_closed.py` cases
+  whose `prepare_document` stubs do not accept the new `max_pages` and
+  `max_total_pixels` keyword arguments. They were not changed because this
+  session is scoped to Step 1. The root-level `python -m pytest -q` collection
+  also stopped on the scratch script `backend/test_gemini.py` because its
+  extraction result was `None`.
+- Live provider behavior and DB-outage persistence are NOT VERIFIED and remain
+  release blockers. Next item: Step 2, full-suite failures and confirmation of
+  the previously applied scan fixes.
