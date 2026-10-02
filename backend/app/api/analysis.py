@@ -12,7 +12,7 @@ from ..rules.engine import RuleEngine
 from ..utils.audit_trail import AuditTrail
 from ..schemas.analysis_result import AnalysisResult
 from ..security.auth import require_staff_access
-from ..utils.analysis_jobs import ensure_analysis_capacity, serialize_analysis_admission
+from ..utils.analysis_jobs import ensure_analysis_capacity, serialize_analysis_admission, limit_analysis_workers
 from ..config import settings
 
 router = APIRouter(prefix='/api', tags=['analysis'], dependencies=[Depends(require_staff_access)])
@@ -56,6 +56,7 @@ def suppress_financial_conclusion_when_review_needed(analysis_result: AnalysisRe
         verdict.correct_calculation = None
         verdict.difference = None
 
+@limit_analysis_workers
 async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
     async with AsyncSessionLocal() as db:
         try:

@@ -1,6 +1,6 @@
 import asyncio
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 from sqlalchemy import select, text
@@ -12,6 +12,7 @@ from app.database import Base
 from app.models.claim import AnalysisRun, Claim, Document, EvidenceLedgerRecord, RuleVerdictRecord
 from app.database import get_db
 from app.security.auth import require_staff_access
+from app.utils import analysis_jobs as analysis_jobs_module
 
 
 @pytest.mark.asyncio
@@ -63,6 +64,64 @@ async def test_restart_recovery_clears_partial_result_before_requeue(tmp_path, m
         assert evidence == []
         assert claim.status == "QUEUED"
 
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_startup_recovery_limits_concurrent_workers_to_configured_cap(tmp_path, monkeypatch):
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'recovery-cap.db'}")
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    monkeypatch.setattr(analysis_module, "AsyncSessionLocal", sessions)
+    monkeypatch.setattr(analysis_jobs_module, "settings", SimpleNamespace(MAX_PENDING_ANALYSIS_JOBS=1), raising=False)
+    monkeypatch.setattr(analysis_module, "_broadcast_claim_status", lambda *_args: asyncio.sleep(0))
+    monkeypatch.setattr(analysis_module, "ExtractionPipeline", lambda **_kwargs: object())
+
+    class ForensicsResult:
+        def model_dump(self, **_kwargs):
+            return {}
+
+    class Forensics:
+        def run(self, *_args, **_kwargs):
+            return ForensicsResult()
+
+    fake_forensics_module = ModuleType("app.forensics.engine")
+    fake_forensics_module.ForensicsEngine = Forensics
+    monkeypatch.setitem(sys.modules, "app.forensics.engine", fake_forensics_module)
+
+    active_workers = 0
+    peak_workers = 0
+    completed_jobs = 0
+    all_completed = asyncio.Event()
+
+    async def track_audit(db, claim_id, action, details, actor="system"):
+        nonlocal active_workers, peak_workers, completed_jobs
+        if action == "EXTRACTION_COMPLETED":
+            active_workers += 1
+            peak_workers = max(peak_workers, active_workers)
+            await asyncio.sleep(0.02)
+            active_workers -= 1
+        if action == "ANALYSIS_COMPLETED":
+            completed_jobs += 1
+            if completed_jobs == 3:
+                all_completed.set()
+
+    monkeypatch.setattr(analysis_module.AuditTrail, "log", track_audit)
+    async with sessions() as db:
+        for index in range(3):
+            claim_id = f"queued-claim-{index}"
+            db.add(Claim(id=claim_id, patient_name="Patient", status="QUEUED"))
+            db.add(AnalysisRun(id=f"queued-run-{index}", claim_id=claim_id, status="PENDING"))
+        await db.commit()
+
+    await analysis_module.resume_analysis_jobs()
+    await asyncio.wait_for(all_completed.wait(), timeout=3)
+    async with sessions() as db:
+        runs = (await db.execute(select(AnalysisRun))).scalars().all()
+        assert len(runs) == 3
+        assert all(run.status == "COMPLETED" for run in runs)
+    assert peak_workers == 1
     await engine.dispose()
 
 
