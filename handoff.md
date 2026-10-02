@@ -34,20 +34,28 @@ bypass must not be possible. Deployment: Render.
 Backend 315 passed, 2 skipped; frontend 77 passed; FastAPI import OK;
 production build OK (Vite large-chunk warning).
 
-## Security scan 7120793f-... (28/28 paths, sealed, 3 findings)
-Full report: docs/security-scan-1.json (large; open only if a finding needs checking, never read it whole)
-1. Financial evidence misbinding: FIXED (exact numeric tokens + cited OCR page).
-2. Aggregate PDF processing / resource exhaustion: FIXED (total pixel budget
-   enforced before rendering; per-page temp files no longer collide).
-3. Cleanup on unexpected storage/upload errors: FIXED (saved files removed).
-Also fixed: verifier field-to-label gap (unrelated payment amounts cannot stand
-in for a bill total). Regression tests added and verified to fail before / pass
-after each fix.
-STATUS: all pending confirmation by a full backend suite run (not yet run).
+## Security scan 7120793f-f058-4a0d-b295-912495ecdc3a (static, 28 changed files)
+Raw manifest: docs/security-scan-1.json (do not read whole; ~53 KB)
+1. HIGH, CWE-345: financial evidence accepted from wrong amount/page
+   (utils/evidence_capture.py L41-52). FIXED (exact numeric token + cited OCR page).
+   Also fixed: verifier field-to-label gap (unrelated payment amounts cannot
+   stand in for a bill total).
+2. HIGH, CWE-400: public PDF uploads can exhaust memory (api/portal.py L108-125).
+   PARTLY FIXED: pixel budget before rendering + temp-file collision fixed.
+   OPEN: bound active analysis jobs (queue/worker limit) and byte budget.
+3. MEDIUM, CWE-459: unexpected upload errors orphan PHI files (api/portal.py L186-207).
+   FIXED (cleanup on any exception), verified by regression test.
+Regression tests were added and shown to fail before / pass after each fix.
+Not covered by scan: live providers, PDF load tests, OIDC proxy, files outside the
+28 changed ones. Duplicate-worker candidate dismissed (single-instance Render only).
+Check test_ext.py: scratch file? Full backend suite not yet re-run after fixes.
+Final review must be a fresh scan of the whole tree.
 
 ## Next (in order; start at first unfinished)
 1. Job concurrency / duplicate / retry / restart-recovery checks  <- interrupted here
-2. Full backend suite; fix failures
+   INCLUDING a cap on active analysis jobs and a total byte budget per
+   submission (open part of scan finding 2)
+2. Full backend suite; fix failures (also confirms the scan fixes: findings 1-3)
 3. Frontend suite + production build
 4. Migration / API-contract / import-startup checks
 5. Broader provenance (policy clauses, critical fields)
