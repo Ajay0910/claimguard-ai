@@ -29,9 +29,27 @@ class AppealEvaluator:
         denial_reasons: List[Union[str, Any]],
         claim_data: Optional[Dict[str, Any]] = None,
         policy_data: Optional[Dict[str, Any]] = None,
+        is_valid_deduction: bool = False,
+        legal_track: Optional[str] = None,
     ) -> AppealEvaluationResult:
         claim = claim_data or {}
         policy = policy_data or {}
+
+        # If deduction is confirmed valid (e.g. Track C), produce NO_GROUNDS immediately
+        if (
+            is_valid_deduction
+            or legal_track == "TRACK_C_VALID_DEDUCTION"
+            or claim.get("is_valid_deduction")
+            or claim.get("legal_track") == "TRACK_C_VALID_DEDUCTION"
+            or policy.get("is_valid_deduction")
+        ):
+            return AppealEvaluationResult(
+                appeal_viability="NO_GROUNDS",
+                statutory_conflicts_detected=[],
+                key_legal_precedents=[],
+                recommended_appeal_grounds=[],
+                suggested_action_plan=["Insurer calculation is contractually and regulatorily valid. No underpayment; no appeal recommended."]
+            )
 
         statutory_conflicts: List[str] = []
         legal_precedents: List[str] = []
@@ -63,7 +81,7 @@ class AppealEvaluator:
         # 1. EVALUATE STATUTORY GROUNDS & CONFLICTS
         # -------------------------------------------------------------
 
-        # Check A: Moratorium Period Breach (Section 45 / IRDAI Master Circular 2024 Para 5.3)
+        # Check A: Moratorium Period Breach (IRDAI Master Circular on Health Insurance Business, 29 May 2024, Chapter V, Para 5.3)
         has_ped_denial = any(
             r.get("category") == "PRE_EXISTING"
             or "pre-existing" in str(r.get("description") or "").lower()
@@ -76,7 +94,7 @@ class AppealEvaluator:
         if has_ped_denial and elapsed_months >= moratorium_months:
             statutory_conflicts.append(
                 f"Moratorium Conflict: Policy has run for {elapsed_months:.1f} months, exceeding statutory {moratorium_months}-month moratorium. "
-                "Under IRDAI Master Circular May 2024 (Para 5.3) & Insurance Act Sec 45, the insurer is legally barred from repudiating on non-disclosure or PED."
+                "Under IRDAI Master Circular on Health Insurance Business, 29 May 2024 (Chapter V, Para 5.3), the insurer is legally barred from repudiating on non-disclosure or pre-existing conditions after 60 months of continuous coverage."
             )
             legal_precedents.append(
                 "Supreme Court of India: Life Insurance Corporation of India vs. Asha Goel (2001) 2 SCC 160 — Repudiation after moratorium period requires strict proof of deliberate fraudulent concealment."
@@ -215,11 +233,20 @@ class AppealEvaluator:
             suggested_action_plan=action_plan,
         )
 
-    def evaluate_verdicts(self, verdicts: List[RuleVerdict]) -> AppealEvaluationResult:
+    def evaluate_verdicts(self, verdicts: List[RuleVerdict], is_valid_deduction: bool = False) -> AppealEvaluationResult:
         failed_rules = [v for v in verdicts if v.status == "FAIL"]
         conflict_rules = [v for v in verdicts if v.status == "WARNING"]
+        has_track_c = any(getattr(v, "legal_track", None) == "TRACK_C_VALID_DEDUCTION" for v in verdicts)
 
         if not failed_rules and not conflict_rules:
+            if is_valid_deduction or has_track_c:
+                return AppealEvaluationResult(
+                    appeal_viability="NO_GROUNDS",
+                    statutory_conflicts_detected=[],
+                    key_legal_precedents=[],
+                    recommended_appeal_grounds=[],
+                    suggested_action_plan=["Insurer calculation is contractually and regulatorily valid. No underpayment; no appeal recommended."]
+                )
             return AppealEvaluationResult(
                 appeal_viability="LOW",
                 statutory_conflicts_detected=[],
@@ -336,7 +363,9 @@ def check_appeal_viability(bill: Any, policy: Any, rejection: Any) -> RuleVerdic
         "covers_mental_health": get_val(policy, 'covers_mental_health', False) if policy else False,
     }
 
-    result = evaluator.evaluate_denial(reasons, claim_data, policy_data)
+    is_valid_ded = bool(get_val(rejection, 'is_valid_deduction', False) or get_val(policy, 'is_valid_deduction', False))
+    track = get_val(rejection, 'legal_track', None) or get_val(policy, 'legal_track', None)
+    result = evaluator.evaluate_denial(reasons, claim_data, policy_data, is_valid_deduction=is_valid_ded, legal_track=track)
 
     if result.appeal_viability == "STRONG":
         status = "FAIL"
@@ -347,6 +376,9 @@ def check_appeal_viability(bill: Any, policy: Any, rejection: Any) -> RuleVerdic
     elif result.appeal_viability == "MODERATE":
         status = "NEEDS_REVIEW"
         finding = "Moderate viability based on secondary findings."
+    elif result.appeal_viability == "NO_GROUNDS":
+        status = "PASS"
+        finding = "Insurer calculation is contractually and regulatorily valid. No underpayment; no appeal recommended."
     else:
         status = "PASS"
         finding = "Denial appears legally defensible with no statutory conflicts."

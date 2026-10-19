@@ -19,6 +19,7 @@ class RuleVerdict(BaseModel):
     monetary_impact: Optional[float] = None
     regulatory_citation: Optional[str] = None
     appeal_recommendation: Optional[str] = None
+    legal_track: Optional[Literal["TRACK_A_ARITHMETIC_BREACH", "TRACK_B_ULTRA_VIRES_CLAUSE", "TRACK_C_VALID_DEDUCTION", "NOT_APPLICABLE"]] = "NOT_APPLICABLE"
     evidence_entry_ids: list[str] = []
     evidence_entries: list[EvidenceLedgerEntry] = []
     

@@ -76,40 +76,38 @@ def check_clause_timeline(bill: HospitalBill, policy: InsurancePolicy, rejection
         
         if hasattr(policy, "evaluate_moratorium"):
             moratorium_status = policy.evaluate_moratorium(claim_date, claim_amount)
+            is_protected = moratorium_status.get("is_protected", False) and claim_date_obj > moratorium_completion_date
+        else:
+            elapsed_rel = relativedelta(claim_date_obj, policy_start)
+            total_months_active = elapsed_rel.years * 12 + elapsed_rel.months + (elapsed_rel.days / 30.44) + (portability_months + migration_months)
+            is_protected = total_months_active >= moratorium_months and claim_date_obj > moratorium_completion_date
             
-            if moratorium_status.get("is_protected", False) and claim_date_obj > moratorium_completion_date:
-                finding_text = (
-                    f"MORATORIUM_RULE_CONFLICT: Rejection cites non-disclosure/pre-existing after the {moratorium_months}-month moratorium.\n"
-                    f"Continuous coverage required: {moratorium_months} months.\n"
-                    f"Ported credits: {portability_months} months.\n"
-                    f"Coverage start: {policy_start}\n"
-                    f"Moratorium completion: {moratorium_completion_date}\n"
-                    f"Claim date: {claim_date_obj}\n"
-                    "Inconsistency: Claim occurred after moratorium completion. Unless established fraud applies, the claim cannot be contested on these grounds."
-                )
-                return RuleVerdict(finding_type="REGULATORY_CONFLICT", 
-                    status="FAIL",
-                    rule_name="Clause Timeline Rule",
-                    rule_description="Validates continuous coverage moratorium rules.",
-                    confidence=1.0,
-                    finding=finding_text,
-                    regulatory_citation="IRDAI Master Circular on Health Insurance, 29 May 2024 (60-Month Moratorium)",
-                    appeal_recommendation="Appeal citing IRDAI Master Circular 2024: 60-month continuous coverage moratorium prohibits contestation on non-disclosure."
-                )
-            else:
-                return RuleVerdict(finding_type="REGULATORY_CONFLICT", 
-                    status="PASS",
-                    rule_name="Clause Timeline Rule",
-                    rule_description="Validates continuous coverage moratorium rules.",
-                    confidence=1.0,
-                    finding=f"Claim date ({claim_date_obj}) is before moratorium completion ({moratorium_completion_date}). Rejection is temporally valid."
-                )
+        if is_protected:
+            finding_text = (
+                f"MORATORIUM_RULE_CONFLICT: Rejection cites non-disclosure/pre-existing after the {moratorium_months}-month moratorium.\n"
+                f"Continuous coverage required: {moratorium_months} months.\n"
+                f"Ported credits: {portability_months} months.\n"
+                f"Coverage start: {policy_start}\n"
+                f"Moratorium completion: {moratorium_completion_date}\n"
+                f"Claim date: {claim_date_obj}\n"
+                "Inconsistency: Claim occurred after moratorium completion. Unless established fraud applies, the claim cannot be contested on these grounds."
+            )
+            return RuleVerdict(finding_type="REGULATORY_CONFLICT", 
+                status="FAIL",
+                rule_name="Clause Timeline Rule",
+                rule_description="Validates continuous coverage moratorium rules.",
+                confidence=1.0,
+                finding=finding_text,
+                regulatory_citation="IRDAI Master Circular on Health Insurance, 29 May 2024 (60-Month Moratorium)",
+                appeal_recommendation="Appeal citing IRDAI Master Circular 2024: 60-month continuous coverage moratorium prohibits contestation on non-disclosure."
+            )
         else:
             return RuleVerdict(finding_type="REGULATORY_CONFLICT", 
-                status="SKIPPED",
+                status="PASS",
                 rule_name="Clause Timeline Rule",
+                rule_description="Validates continuous coverage moratorium rules.",
                 confidence=1.0,
-                finding="Policy object does not support moratorium evaluation."
+                finding=f"Claim date ({claim_date_obj}) is before moratorium completion ({moratorium_completion_date}). Rejection is temporally valid."
             )
         
     except Exception as e:

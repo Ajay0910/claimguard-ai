@@ -1,6 +1,6 @@
 import uuid
 import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from jinja2 import Environment, BaseLoader
 
@@ -171,7 +171,7 @@ class ReportGenerator:
         """
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", size=11)
+        pdf.set_font("Helvetica", size=10)
         
         for line in appeal_text.split('\n'):
             # Convert simple markdown bold back to text for FPDF to avoid printing **
@@ -179,8 +179,56 @@ class ReportGenerator:
             # replace rupee symbol for basic PDF compatibility
             clean_line = clean_line.replace('₹', 'Rs. ')
             # Fallback encode decode to ascii to ignore unexpected chars
-            clean_line = clean_line.encode('ascii', 'ignore').decode('ascii')
-            pdf.multi_cell(0, 5, txt=clean_line, align="L")
+            try:
+                pdf.multi_cell(0, 5, text=clean_line, align="L", new_x="LMARGIN", new_y="NEXT")
+            except TypeError:
+                pdf.multi_cell(0, 5, txt=clean_line, align="L")
+                pdf.set_x(getattr(pdf, "l_margin", 10))
             
         pdf.output(output_path)
         return output_path
+
+    def generate_ombudsman_form_via(self, complaint_data: dict, output_pdf_path: Optional[str] = None) -> dict:
+        """
+        Generate statutory Insurance Ombudsman Form VI-A text and optional PDF.
+        """
+        from .ombudsman_form_generator import OmbudsmanFormGenerator, map_pincode_to_ombudsman
+        generator = OmbudsmanFormGenerator()
+        form_text = generator.generate_form_via_text(complaint_data)
+        pdf_path = None
+        if output_pdf_path:
+            pdf_path = generator.generate_form_via_pdf(complaint_data, output_pdf_path)
+        pincode = str(complaint_data.get("pincode", "400001"))
+        jurisdiction = map_pincode_to_ombudsman(pincode)
+        return {
+            "form_text": form_text,
+            "pdf_path": pdf_path,
+            "jurisdiction": jurisdiction
+        }
+
+    def generate_predischarge_alert(self, simulation_result: Any) -> dict:
+        """
+        Formats pre-discharge simulation result into an actionable patient advisory packet.
+        """
+        if hasattr(simulation_result, "to_dict"):
+            data = simulation_result.to_dict()
+        elif hasattr(simulation_result, "model_dump"):
+            data = simulation_result.model_dump()
+        elif isinstance(simulation_result, dict):
+            data = dict(simulation_result)
+        else:
+            data = {}
+
+        return {
+            "is_interim": data.get("is_interim", True),
+            "has_room_rent_excess": data.get("has_room_rent_excess", False),
+            "room_rate": data.get("actual_room_rate", 0.0),
+            "eligible_room_rate": data.get("eligible_room_rate", 0.0),
+            "projected_room_excess": data.get("projected_room_excess", 0.0),
+            "projected_proportionate_deduction": data.get("projected_proportionate_deduction", 0.0),
+            "projected_total_out_of_pocket": data.get("projected_total_out_of_pocket", 0.0),
+            "warning_message": data.get("warning_message", ""),
+            "recommended_action": data.get("recommended_action", ""),
+            "scrubbed_non_payable_items": data.get("scrubbed_non_payable_items", []),
+            "total_scrubbed_non_payables": data.get("total_scrubbed_non_payables", 0.0),
+        }

@@ -25,6 +25,8 @@ class HospitalBill(BaseModel):
     patient_gender: Optional[Provenance[str]] = None
     admission_date: Optional[Provenance[str]] = None
     discharge_date: Optional[Provenance[str]] = None
+    estimated_discharge_date: Optional[Provenance[str]] = None
+    is_interim_bill: bool = False
     doctor_name: Optional[Provenance[str]] = None
     ward_type: Optional[Provenance[str]] = None
     bed_number: Optional[Provenance[str]] = None
@@ -54,27 +56,49 @@ class HospitalBill(BaseModel):
     @property
     def room_charges_per_day(self) -> Optional[float]:
         for item in self.line_items:
-            if item.category.value == "ROOM":
-                return item.unit_rate.value
+            cat = getattr(item.category, 'value', item.category) if item.category else None
+            if cat == "ROOM":
+                rate = getattr(item.unit_rate, 'value', item.unit_rate) if item.unit_rate else None
+                if rate is not None and float(rate) > 0:
+                    return float(rate)
+                amt = getattr(item.amount, 'value', item.amount) if item.amount else None
+                qty = getattr(item.quantity, 'value', item.quantity) if item.quantity else 1.0
+                if amt is not None and float(amt) > 0:
+                    q = float(qty) if qty and float(qty) > 0 else 1.0
+                    return float(amt) / q
         return None
 
     @computed_field
     @property
     def length_of_stay(self) -> Optional[int]:
-        if self.admission_date and self.discharge_date:
-            def parse_date(d_str: str) -> datetime:
-                try:
-                    return datetime.fromisoformat(d_str.replace('Z', '+00:00'))
-                except ValueError:
+        effective_discharge = self.discharge_date or self.estimated_discharge_date
+        if self.admission_date and effective_discharge:
+            def parse_date(d_val) -> Optional[datetime]:
+                d_str = getattr(d_val, 'value', d_val) if d_val else None
+                if not d_str or str(d_str).strip().upper() in ["", "NONE", "NULL", "N/A"]:
+                    return None
+                d_str = str(d_str).strip()
+                for fmt in [
+                    None,
+                    '%d/%m/%Y',
+                    '%d-%m-%Y',
+                    '%Y-%m-%d',
+                    '%Y/%m/%d'
+                ]:
                     try:
-                        return datetime.strptime(d_str, '%d/%m/%Y')
-                    except ValueError:
-                        return datetime.strptime(d_str, '%d-%m-%Y')
+                        if fmt is None:
+                            return datetime.fromisoformat(d_str.replace('Z', '+00:00'))
+                        else:
+                            return datetime.strptime(d_str, fmt)
+                    except (ValueError, TypeError):
+                        continue
+                return None
             try:
-                admit = parse_date(self.admission_date.value)
-                discharge = parse_date(self.discharge_date.value)
-                days = (discharge.date() - admit.date()).days
-                return max(1, days)
-            except ValueError:
+                admit = parse_date(self.admission_date)
+                discharge = parse_date(effective_discharge)
+                if admit and discharge:
+                    days = (discharge.date() - admit.date()).days
+                    return max(1, days)
+            except Exception:
                 pass
         return None

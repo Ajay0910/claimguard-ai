@@ -21,7 +21,8 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
                 rule_name="Proportionate Deduction Rule",
                 rule_description="Validates if proportionate deduction was correctly applied.",
                 confidence=1.0,
-                finding="No room rent limit in policy. Proportionate deduction not applicable."
+                finding="No room rent limit in policy. Proportionate deduction not applicable.",
+                legal_track="NOT_APPLICABLE"
             )
         
         actual_room_rate = get_val(bill, 'room_charges_per_day', None)
@@ -33,7 +34,8 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
                 rule_name="Proportionate Deduction Rule",
                 rule_description="Validates if proportionate deduction was correctly applied.",
                 confidence=1.0,
-                finding="Missing room rate or length of stay in hospital bill."
+                finding="Missing room rate or length of stay in hospital bill.",
+                legal_track="NOT_APPLICABLE"
             )
 
         from ..engine.calculator import FinancialMath as fmath
@@ -134,6 +136,28 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
         misc_deductions = sum(fmath.extract(get_val(item, 'amount', 0.0)) for item in get_val(bill, 'line_items', []) if get_val(item, 'category', '').upper() == 'MISCELLANEOUS')
         expected_total_deduction = total_room_excess + proportionate_reduction + misc_deductions
         
+        # Clause inspection for Track B (Ultra Vires clause attempting to override IRDAI protected heads)
+        prop_rule = get_val(policy, 'proportionate_deduction_rule', None)
+        clause_texts = []
+        if prop_rule:
+            for attr in ['policy_clause', 'source_text', 'applicability_conditions', 'description']:
+                val = get_val(prop_rule, attr, '')
+                if val: clause_texts.append(str(val))
+        for attr in ['deduction_order_clause', 'exclusions']:
+            val = get_val(policy, attr, '')
+            if isinstance(val, list): clause_texts.extend(str(x) for x in val)
+            elif val: clause_texts.append(str(val))
+        combined_clause_text = " ".join(clause_texts).lower()
+
+        is_ultra_vires_clause = any(
+            phrase in combined_clause_text for phrase in [
+                "all charges", "entire bill", "all expenses", "including ot", 
+                "including pharmacy", "including medicines", "including consumables", 
+                "including icu", "notwithstanding irdai", "all medical expenses",
+                "overrides irdai", "ultra vires", "without exception"
+            ]
+        )
+
         is_fail = insurer_deduction > (expected_total_deduction + 100.0)
         
         finding = (f"Actual Rate: Rs. {actual_room_rate_f}/day. Eligible: Rs. {policy_room_limit_f}/day. "
@@ -145,10 +169,21 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
                    
         appeal_rec = None
         if is_fail:
-            if is_triggered:
-                appeal_rec = "Proportionate deduction was unlawfully applied to the entire bill instead of only room-linked items (IRDAI Master Circular May 2024)."
+            if is_ultra_vires_clause:
+                legal_track = "TRACK_B_ULTRA_VIRES_CLAUSE"
+                finding += " [TRACK B: ULTRA VIRES CLAUSE - Policy clause unlawfully attempts to subject statutory protected heads to proportionate deduction contrary to IRDAI Master Circular 2024.]"
+                appeal_rec = "Policy clause purporting to apply proportionate deduction to protected heads is ultra vires IRDAI Master Circular May 2024. Demand full restoration."
             else:
-                appeal_rec = "Recompute proportionate deduction as the eligible room limit was not exceeded."
+                legal_track = "TRACK_A_ARITHMETIC_BREACH"
+                finding += " [TRACK A: ARITHMETIC BREACH - Proportionate deduction ratio applied beyond permissible room-linked charges to protected categories.]"
+                if is_triggered:
+                    appeal_rec = "Proportionate deduction was unlawfully applied to the entire bill instead of only room-linked items (IRDAI Master Circular May 2024)."
+                else:
+                    appeal_rec = "Recompute proportionate deduction as the eligible room limit was not exceeded."
+        else:
+            legal_track = "TRACK_C_VALID_DEDUCTION"
+            finding += " Insurer calculation is contractually and regulatorily valid. No underpayment."
+            appeal_rec = None
 
         evidence_entry = None
         if state is not None and getattr(state, 'ledger', None) is not None:
@@ -166,6 +201,7 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
             rule_description="Validates if proportionate deduction was correctly applied.",
             confidence=1.0,
             finding=finding,
+            legal_track=legal_track,
             insurer_calculation=insurer_deduction,
             correct_calculation=expected_total_deduction,
             expected_admissible_amount=expected_total_deduction,

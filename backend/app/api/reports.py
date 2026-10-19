@@ -85,3 +85,53 @@ async def get_audit_trail(claim_id: str, db: AsyncSession = Depends(get_db)) -> 
         "verified": is_verified,
         "audit_logs": history
     }
+
+@router.get("/reports/{claim_id}/ombudsman-form")
+async def get_ombudsman_form_via(
+    claim_id: str,
+    pincode: Optional[str] = None,
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    from ..models.claim import Document
+    result = await db.execute(
+        select(AnalysisRun)
+        .where(AnalysisRun.claim_id == claim_id)
+        .order_by(AnalysisRun.started_at.desc())
+    )
+    run = result.scalars().first()
+    if not run or run.status != "COMPLETED":
+        raise HTTPException(status_code=404, detail="Completed analysis not found")
+    doc_result = await db.execute(select(Document).where(Document.claim_id == claim_id))
+    documents = doc_result.scalars().all()
+    from ..schemas.hospital_bill import HospitalBill
+    from ..schemas.insurance_policy import InsurancePolicy
+    from ..schemas.rejection_letter import RejectionLetter
+    from ..schemas.analysis_result import AnalysisResult
+    bill, policy, rejection = None, None, None
+    for doc in documents:
+        if doc.document_type == "HOSPITAL_BILL" and doc.extracted_data:
+            bill = HospitalBill(**doc.extracted_data)
+        elif doc.document_type == "INSURANCE_POLICY" and doc.extracted_data:
+            policy = InsurancePolicy(**doc.extracted_data)
+        elif doc.document_type == "REJECTION_LETTER" and doc.extracted_data:
+            rejection = RejectionLetter(**doc.extracted_data)
+    run_res_data = run.result_data or {}
+    analysis_res = AnalysisResult.model_validate(run_res_data) if hasattr(AnalysisResult, "model_validate") else AnalysisResult(**run_res_data)
+    from ..reports.generator import ReportGenerator
+    generator = ReportGenerator()
+    return generator.generate_ombudsman_form_via(analysis_res, bill, policy, rejection, pincode=pincode)
+
+@router.post("/reports/simulate-predischarge")
+async def simulate_predischarge(payload: dict) -> dict:
+    from ..schemas.hospital_bill import HospitalBill
+    from ..schemas.insurance_policy import InsurancePolicy
+    from ..engine.predischarge_simulator import PreDischargeSimulator
+    bill_data = payload.get("bill", {})
+    policy_data = payload.get("policy", {})
+    bill = HospitalBill(**bill_data) if bill_data else None
+    policy = InsurancePolicy(**policy_data) if policy_data else None
+    if not bill or not policy:
+        raise HTTPException(status_code=400, detail="Both bill and policy data are required.")
+    simulator = PreDischargeSimulator()
+    sim_res = simulator.simulate(bill, policy)
+    return sim_res.model_dump() if hasattr(sim_res, 'model_dump') else sim_res.__dict__

@@ -24,6 +24,7 @@ import app.rules.policy_applicability
 import app.rules.document_integrity
 import app.rules.clinical_firewall
 import app.rules.identity_gate
+import app.rules.non_payable_items
 
 
 class RuleEngine:
@@ -65,18 +66,41 @@ class RuleEngine:
                     and "COVERAGE_DATE_CONFLICT" in (verdict.finding or "")
                     and policy
                     and rejection
-                    and hasattr(policy, "evaluate_moratorium")
                     and get_val(rejection, "claim_date", None)
                 ):
                     claim_date = get_val(rejection, "claim_date", None)
-                    moratorium_status = policy.evaluate_moratorium(claim_date, 0.0) if claim_date else {"is_protected": False}
-                    if moratorium_status.get("is_protected", False):
+                    is_protected = False
+                    moratorium_reason = ""
+                    if hasattr(policy, "evaluate_moratorium"):
+                        moratorium_status = policy.evaluate_moratorium(claim_date, 0.0) if claim_date else {"is_protected": False}
+                        is_protected = moratorium_status.get("is_protected", False)
+                        moratorium_reason = moratorium_status.get("reason", "")
+                    elif claim_date:
+                        try:
+                            from dateutil.relativedelta import relativedelta
+                            from dateutil.parser import parse
+                            start_str = get_val(policy, 'inception_date', getattr(policy, 'policy_start_date', None))
+                            if start_str:
+                                p_start = parse(str(start_str)[:10]).date()
+                                c_date = parse(str(claim_date)[:10]).date()
+                                mor_m = get_val(policy, 'moratorium_period_months', 60) or 60
+                                port_m = get_val(policy, 'portability_credits_months', 0) or 0
+                                mig_m = get_val(policy, 'migration_credits_months', 0) or 0
+                                needed = mor_m - port_m - mig_m
+                                comp_date = p_start + relativedelta(months=needed)
+                                if c_date >= comp_date:
+                                    is_protected = True
+                                    moratorium_reason = f"Moratorium of {mor_m} months completed on {comp_date}."
+                        except Exception:
+                            pass
+
+                    if is_protected:
                         verdict = RuleVerdict(finding_type="FINANCIAL_DISCREPANCY", 
                             status="PASS",
                             rule_name="Cross-Document Identity Gate",
                             rule_description=verdict.rule_description,
                             confidence=1.0,
-                            finding=f"Continuous coverage active under 60-month moratorium: {moratorium_status.get('reason')}",
+                            finding=f"Continuous coverage active under 60-month moratorium: {moratorium_reason}",
                             monetary_impact=None
                         )
                 verdicts.append(verdict)
@@ -282,10 +306,14 @@ class RuleEngine:
                 "covers_mental_health": get_val(policy, 'covers_mental_health', False) if policy else False,
             }
             reasons = get_val(rejection, 'rejection_reasons', None) or get_val(rejection, 'reasons', []) or []
+            has_track_c = any(getattr(v, "legal_track", None) == "TRACK_C_VALID_DEDUCTION" for v in verdicts)
+            is_valid_ded = has_track_c and not has_fail and not has_blocked and not reconciliation_failed
             appeal_result = self.appeal_evaluator.evaluate_denial(
                 denial_reasons=reasons,
                 claim_data=claim_data,
                 policy_data=policy_data,
+                is_valid_deduction=is_valid_ded,
+                legal_track="TRACK_C_VALID_DEDUCTION" if is_valid_ded else None
             )
             
         # Bind ledger entries to verdicts if ledger exists
