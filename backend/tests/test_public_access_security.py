@@ -26,6 +26,7 @@ def test_portal_secret_is_random_and_only_hash_is_persisted():
 
 
 def test_staff_endpoint_requires_proxy_secret_and_authenticated_identity(monkeypatch):
+    monkeypatch.setattr(settings, "STAFF_AUTH_DISABLED", False)
     monkeypatch.setattr(settings, "STAFF_PROXY_SHARED_SECRET", "proxy-secret-for-test")
     app = FastAPI()
 
@@ -63,6 +64,7 @@ def test_staff_endpoint_requires_proxy_secret_and_authenticated_identity(monkeyp
 
 
 def test_staff_endpoint_fails_closed_when_proxy_is_not_configured(monkeypatch):
+    monkeypatch.setattr(settings, "STAFF_AUTH_DISABLED", False)
     monkeypatch.setattr(settings, "STAFF_PROXY_SHARED_SECRET", None)
     app = FastAPI()
 
@@ -82,6 +84,7 @@ def test_staff_endpoint_fails_closed_when_proxy_is_not_configured(monkeypatch):
 
 
 def test_real_staff_router_rejects_direct_origin_header_spoofing(monkeypatch):
+    monkeypatch.setattr(settings, "STAFF_AUTH_DISABLED", False)
     monkeypatch.setattr(settings, "STAFF_PROXY_SHARED_SECRET", "proxy-secret-for-test")
     app = FastAPI()
     app.include_router(upload_router)

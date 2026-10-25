@@ -48,6 +48,8 @@ class InsurancePolicy(BaseModel):
     policy_start_date: Optional[Provenance[str]] = None
     policy_end_date: Optional[Provenance[str]] = None
     sum_insured: Optional[Provenance[float]] = None
+    base_sum_insured: Optional[Provenance[float]] = None
+    cumulative_bonus: Optional[Provenance[float]] = None
     room_rent_limit_per_day: Optional[Provenance[float]] = None
     room_category_entitled: Optional[Provenance[str]] = None
     copay_percentage: Provenance[float] = Provenance(value=0.0)
@@ -64,6 +66,7 @@ class InsurancePolicy(BaseModel):
     enhanced_sum_insured_date: Optional[Provenance[str]] = None
     proportionate_deduction_rule: Optional[ProportionateDeductionRuleConfig] = None
     exclusions: list[Provenance[str]] = []
+    statutory_clause_audit: Optional[dict] = None
 
     def evaluate_moratorium(self, claim_date: str, claim_amount: float) -> dict:
         """

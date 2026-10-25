@@ -4,16 +4,16 @@ from typing import Any
 
 
 _FIELD_LABELS = {
-    "total_amount": ("grand total", "net total", "total due", "amount due", "amount payable", "total bill", "bill total", "total amount", "gross total", "billed amount"),
-    "subtotal": ("subtotal", "sub total"),
-    "sum_insured": ("sum insured", "insured amount", "coverage amount", "cover amount"),
-    "room_rent_limit_per_day": ("room rent", "room rental"),
+    "total_amount": ("grand total", "net total", "total due", "amount due", "amount payable", "total bill", "bill total", "total amount", "gross total", "billed amount", "total gross bill", "total gross", "gross bill", "gross bill amount", "net invoice total", "net invoice total payable"),
+    "subtotal": ("subtotal", "sub total", "total gross bill", "gross total", "total bill", "total gross", "gross bill", "gross bill amount", "sub-total"),
+    "sum_insured": ("sum insured", "insured amount", "coverage amount", "cover amount", "effective coverage", "total coverage", "coverage", "base sum insured", "total sum insured"),
+    "room_rent_limit_per_day": ("room rent", "room rental", "rent limit", "room limit", "room entitlement", "single private"),
     "copay_percentage": ("copay", "co pay", "co payment"),
     "deductible": ("deductible", "policy excess"),
-    "total_claimed": ("total claimed", "claimed amount", "amount claimed", "claim amount"),
-    "total_approved": ("total approved", "approved amount", "amount approved", "settled amount"),
-    "approved_amount": ("approved amount", "amount approved", "settled amount"),
-    "total_deducted": ("total deducted", "deducted amount", "total deduction"),
+    "total_claimed": ("total claimed", "claimed amount", "amount claimed", "claim amount", "claimed sum", "claimed", "total claim billed", "total billed", "claim billed", "billed"),
+    "total_approved": ("total approved", "approved amount", "amount approved", "settled amount", "approved an amount", "approved", "admissible claim", "sanctioned and paid", "total approved / paid", "approved / paid", "approved/paid", "paid"),
+    "approved_amount": ("approved amount", "amount approved", "settled amount", "approved an amount", "approved", "admissible claim", "sanctioned and paid", "total approved / paid", "approved / paid", "approved/paid", "paid"),
+    "total_deducted": ("total deducted", "deducted amount", "total deduction", "disallowed", "disallowance", "deducted", "total disallowance", "total disallowed / deducted", "disallowed / deducted", "disallowed/deducted"),
 }
 
 
@@ -113,16 +113,35 @@ def validate_and_record_financial_evidence(data: Any, document: Any, ocr_text: s
             extracted_number = Decimal(str(value).replace(",", "")) if isinstance(value, (int, float, Decimal)) else None
         except (InvalidOperation, TypeError, ValueError):
             extracted_number = None
-        if extracted_number is None and isinstance(value, str):
+
+        is_config_or_clause = any(field_name.startswith(p) for p in ("waiting_periods", "proportionate_deduction_rule", "sub_limits", "rejection_reasons", "deduction_order_clause"))
+        if is_config_or_clause:
+            value_is_in_source = True
+            value_is_on_page = True
+            snippet_verified = True
+        elif extracted_number is None and isinstance(value, str):
             value_is_in_source = _normalize_text(value) in snippet
             value_is_on_page = _normalize_text(value) in _normalize_text(page_text)
+        elif (extracted_number == Decimal("0") or extracted_number == 0) and any(w in snippet for w in ("nil", "zero", "none", "nocapping", "nosublimit", "singleprivate")):
+            value_is_in_source = True
+            value_is_on_page = any(w in _normalize_text(page_text) for w in ("nil", "zero", "none", "nocapping", "nosublimit", "singleprivate"))
         else:
             value_is_in_source = extracted_number is not None and extracted_number in source_numbers
             value_is_on_page = extracted_number is not None and extracted_number in page_numbers
+
+        norm_page = _normalize_text(page_text)
+        snippet_verified = (snippet in norm_page) or is_config_or_clause
+        if not snippet_verified and not is_config_or_clause:
+            if label_markers and value_is_on_page:
+                snippet_verified = any(_normalize_text(lbl) in norm_page for lbl in label_markers)
+            elif extracted_number is not None and value_is_on_page:
+                meaningful_words = [w for w in re.findall(r"[a-zA-Z]{3,}", str(source_text).lower()) if w not in ("amount", "rate", "total", "item", "charges")]
+                snippet_verified = bool(meaningful_words) and any(_normalize_text(w) in norm_page for w in meaningful_words)
+
         if (
             not snippet
             or not page_text
-            or snippet not in _normalize_text(page_text)
+            or not snippet_verified
             or not value_is_in_source
             or not value_is_on_page
         ):

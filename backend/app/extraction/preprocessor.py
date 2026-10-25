@@ -78,6 +78,9 @@ def pdf_to_images(
     """Convert PDF pages to temporary image files."""
     import fitz
     doc = fitz.open(pdf_path)
+    if getattr(doc, "is_encrypted", False):
+        doc.close()
+        raise ValueError("PDF is encrypted or password-protected")
     if len(doc) == 0 or len(doc) > max_pages:
         doc.close()
         raise ValueError(f"PDF page count must be between 1 and {max_pages}")

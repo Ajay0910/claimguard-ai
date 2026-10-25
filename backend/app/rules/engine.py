@@ -25,6 +25,12 @@ import app.rules.document_integrity
 import app.rules.clinical_firewall
 import app.rules.identity_gate
 import app.rules.non_payable_items
+import app.rules.cumulative_bonus_protection
+import app.rules.multiple_surgery_rule
+import app.rules.sepsis_icu_protocol_rule
+import app.rules.modern_treatment_rule
+import app.rules.statutory_policy_auditor
+import app.rules.co_surgeon_rule
 
 
 class RuleEngine:

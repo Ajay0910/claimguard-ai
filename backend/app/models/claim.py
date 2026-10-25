@@ -31,7 +31,7 @@ class Document(Base):
     __tablename__ = "documents"
     
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"))
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"), index=True)
     document_type: Mapped[str] = mapped_column(String)  # Enum: HOSPITAL_BILL, INSURANCE_POLICY, REJECTION_LETTER
     filename: Mapped[str] = mapped_column(String)
     original_filename: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -50,12 +50,12 @@ class AnalysisRun(Base):
     __tablename__ = "analysis_runs"
     
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"))
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"), index=True)
     status: Mapped[str] = mapped_column(String)  # RUNNING, COMPLETED, FAILED
     result_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     forensics_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     overall_status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    total_monetary_impact: Mapped[Optional[float]] = mapped_column(nullable=True)
+    total_monetary_impact: Mapped[Optional[float]] = mapped_column(nullable=True, default=None)
     started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
@@ -67,7 +67,7 @@ class RuleVerdictRecord(Base):
     __tablename__ = "rule_verdicts"
     
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    analysis_run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"))
+    analysis_run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
     rule_name: Mapped[str] = mapped_column(String)
     rule_description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[str] = mapped_column(String)  # PASS, FAIL, SKIPPED, NEEDS_REVIEW
@@ -96,7 +96,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    claim_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    claim_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     action: Mapped[str] = mapped_column(String)
     actor: Mapped[str] = mapped_column(String, default="system")
     details: Mapped[Dict[str, Any]] = mapped_column(JSON)

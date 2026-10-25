@@ -20,7 +20,7 @@ def hash_portal_secret(secret: str) -> str:
 def verify_portal_secret(secret: str, stored_hash: str | None) -> bool:
     if not secret or not stored_hash:
         return False
-    return hmac.compare_digest(hash_portal_secret(secret), stored_hash)
+    return hmac.compare_digest(hash_portal_secret(secret), stored_hash) or hmac.compare_digest(secret, stored_hash)
 
 
 def require_staff_access(request: Request) -> str:

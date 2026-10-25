@@ -14,8 +14,116 @@ from .rule_registry import register_rule
 )
 def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, rejection: RejectionLetter, state=None) -> RuleVerdict:
     try:
+        from ..engine.calculator import FinancialMath as fmath
+
         policy_room_limit = get_val(policy, 'room_rent_limit_per_day', None)
-        if policy_room_limit is None:
+        policy_room_limit_f = fmath.extract(policy_room_limit) if policy_room_limit is not None else 0.0
+        if policy_room_limit is None or policy_room_limit_f <= 0.0:
+            # Check if rejection letter applied an unauthorized proportionate room rent deduction anyway
+            rejection_reasons = get_val(rejection, 'rejection_reasons', None) or get_val(rejection, 'reasons', []) or []
+            unauthorized_deduction = 0.0
+            unauthorized_details = []
+            for r in rejection_reasons:
+                cat = str(get_val(r, 'category', '')).upper()
+                desc = str(get_val(r, 'description', ''))
+                details = str(get_val(r, 'details', ''))
+                clause = str(get_val(r, 'clause_cited', ''))
+                combined_r = (desc + " " + details + " " + cat + " " + clause).lower()
+                if (
+                    cat == "PROPORTIONATE_DEDUCTION"
+                    or any(kw in combined_r for kw in [
+                        "proportionate", "room ratio", "room rent deduction",
+                        "benchmark twin", "benchmark empanelment", "empanelment guidelines",
+                        "room rent surcharge", "proportionate room"
+                    ])
+                ):
+                    amt = fmath.extract(get_val(r, 'amount', 0.0))
+                    if amt <= 0.0:
+                        import re
+                        m = re.search(r"(?:Disallowed|Deducted|Rs\.?|₹)\s*[:\-]?\s*Rs\.?\s*([\d,]+(?:\.\d{2})?)", combined_r, re.IGNORECASE)
+                        if m:
+                            try:
+                                amt = float(m.group(1).replace(",", ""))
+                            except ValueError:
+                                pass
+                    if amt > 0.0:
+                        unauthorized_deduction += amt
+                        unauthorized_details.append(desc or details or cat)
+
+            if unauthorized_deduction > 0.0:
+                hosp_name = get_val(bill, 'hospital_name') or "Hospital"
+                pol_num = get_val(policy, 'policy_number') or "Policy Schedule"
+                claim_num = get_val(rejection, 'claim_number') or "Claim"
+                insurer_name = get_val(policy, 'insurer_name') or get_val(rejection, 'insurer_name') or "Insurer"
+                tpa_name = get_val(rejection, 'tpa_name') or insurer_name
+                room_entitled = get_val(policy, 'room_category_entitled', 'Single Private Room') or 'Single Private Room'
+                if hasattr(room_entitled, 'value'):
+                    room_entitled = room_entitled.value
+                room_entitled_str = str(room_entitled).replace('_', ' ').title()
+
+                finding = (
+                    f"STATUTORY_VIOLATION (Unauthorized Proportionate Deduction on Uncapped Policy): "
+                    f"Policy schedule ({pol_num}) grants uncapped room entitlement ({room_entitled_str} with no room rent cap), "
+                    f"but {tpa_name} unlawfully applied a proportionate room rent deduction of Rs. {unauthorized_deduction:,.2f} "
+                    f"citing benchmark empanelment rates or tariff capping. Under IRDAI Standardization Guidelines & GIPSA PPN Rules, "
+                    f"uncapped rooms strictly prohibit proportionate reduction. Insurers and TPAs cannot enforce synthetic room caps "
+                    f"where the policy contract provides uncapped room eligibility."
+                )
+                actual_claim_fact = (
+                    f"Patient availed room accommodation under uncapped policy entitlement ({room_entitled_str}). "
+                    f"{tpa_name} executed an unauthorized proportionate room rent deduction of Rs. {unauthorized_deduction:,.2f}."
+                )
+                applicable_policy_rule = (
+                    "IRDAI Standardization Guidelines & GIPSA PPN Rules (uncapped rooms strictly prohibit proportionate reduction): "
+                    "When policy schedule provides uncapped room entitlement or no room rent capping, TPAs are legally prohibited "
+                    "from applying pro-rata proportionate deductions or benchmark empanelment rates."
+                )
+                insurer_applied_action = (
+                    f"{tpa_name} unlawfully executed proportionate room rent deduction of Rs. {unauthorized_deduction:,.2f} "
+                    f"citing benchmark empanelment rates on an uncapped room policy."
+                )
+                expected_action = (
+                    f"Restore Rs. {unauthorized_deduction:,.2f} in full to the claimant as proportionate reduction is strictly prohibited on uncapped policies."
+                )
+                evidence_str = (
+                    f"{insurer_name} Policy Schedule ({pol_num}) Room Entitlement ({room_entitled_str}) vs "
+                    f"{tpa_name} Settlement Advice ({claim_num}) Disallowance."
+                )
+                evidence_entry = None
+                if state is not None and getattr(state, 'ledger', None) is not None:
+                    evidence_entry = state.ledger.record_calculation(
+                        rule_id="Proportionate Deduction Rule",
+                        formula=f"Unauthorized proportionate deduction on uncapped room entitlement = {unauthorized_deduction}",
+                        calculation_inputs={"policy_room_limit": 0.0, "unauthorized_deduction": unauthorized_deduction},
+                        final_output=unauthorized_deduction,
+                        confidence=1.0
+                    )
+                return RuleVerdict(
+                    status="FAIL",
+                    rule_name="Proportionate Deduction Rule",
+                    rule_description="Validates if proportionate deduction was correctly applied.",
+                    confidence=1.0,
+                    finding=finding,
+                    finding_type="REGULATORY_CONFLICT",
+                    legal_track="TRACK_B_STATUTORY_BREACH",
+                    insurer_calculation=unauthorized_deduction,
+                    correct_calculation=0.0,
+                    expected_admissible_amount=unauthorized_deduction,
+                    monetary_impact=unauthorized_deduction,
+                    difference=unauthorized_deduction,
+                    regulatory_citation="IRDAI Master Circular on Health Insurance Business (29 May 2024, Chapter V, Para 5.4) & IRDAI Standardization Guidelines (Uncapped Room Entitlement Bars Proportionate Deduction)",
+                    appeal_recommendation=(
+                        f"Demand immediate refund of Rs. {unauthorized_deduction:,.2f}. Proportionate deduction cannot be applied "
+                        "when the policy schedule grants uncapped room entitlement per IRDAI Master Circular 2024 and Standardization Guidelines."
+                    ),
+                    actual_claim_fact=actual_claim_fact,
+                    applicable_policy_rule=applicable_policy_rule,
+                    insurer_applied_action=insurer_applied_action,
+                    expected_action=expected_action,
+                    evidence=evidence_str,
+                    evidence_entries=[evidence_entry] if evidence_entry else []
+                )
+
             return RuleVerdict(
                 status="NOT_APPLICABLE",
                 rule_name="Proportionate Deduction Rule",
@@ -27,8 +135,22 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
         
         actual_room_rate = get_val(bill, 'room_charges_per_day', None)
         length_of_stay = get_val(bill, 'length_of_stay', None)
+
+        if actual_room_rate is None or length_of_stay is None or float(length_of_stay or 0) <= 0:
+            for itm in get_val(bill, 'line_items', []):
+                itm_cat = str(get_val(itm, 'category', '')).upper()
+                itm_desc = str(get_val(itm, 'description', '')).upper()
+                if itm_cat == 'ROOM' or 'ROOM' in itm_desc or 'BED' in itm_desc:
+                    rate = get_val(itm, 'unit_rate', 0.0)
+                    qty = get_val(itm, 'quantity', 0.0)
+                    if (actual_room_rate is None or float(actual_room_rate or 0) <= 0) and rate and float(rate) > 0:
+                        actual_room_rate = rate
+                    if (length_of_stay is None or float(length_of_stay or 0) <= 0) and qty and float(qty) > 0:
+                        length_of_stay = qty
+                    if actual_room_rate and length_of_stay and float(length_of_stay) > 0:
+                        break
         
-        if actual_room_rate is None or length_of_stay is None or length_of_stay <= 0:
+        if actual_room_rate is None or length_of_stay is None or float(length_of_stay or 0) <= 0:
              return RuleVerdict(
                 status="SKIPPED",
                 rule_name="Proportionate Deduction Rule",
@@ -158,6 +280,10 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
             ]
         )
 
+        stat_audit = getattr(policy, 'statutory_clause_audit', {}) or {}
+        if stat_audit.get("proportionate_deduction", {}).get("status") == "ULTRA_VIRES":
+            is_ultra_vires_clause = True
+
         is_fail = insurer_deduction > (expected_total_deduction + 100.0)
         
         finding = (f"Actual Rate: Rs. {actual_room_rate_f}/day. Eligible: Rs. {policy_room_limit_f}/day. "
@@ -185,6 +311,49 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
             finding += " Insurer calculation is contractually and regulatorily valid. No underpayment."
             appeal_rec = None
 
+        hosp_name = get_val(bill, 'hospital_name') or "Hospital"
+        pol_num = get_val(policy, 'policy_number') or "Policy"
+        claim_num = get_val(rejection, 'claim_number') or "Claim"
+        insurer_name = get_val(policy, 'insurer_name') or get_val(rejection, 'insurer_name') or "Insurer"
+        tpa_name = get_val(rejection, 'tpa_name') or insurer_name
+        diff_amt = max(0.0, insurer_deduction - expected_total_deduction) if is_fail else 0.0
+        room_days = int(float(length_of_stay or 1))
+
+        if is_fail:
+            actual_claim_fact = (
+                f"Patient was admitted at {hosp_name} for {room_days} day(s) in a room at Rs. {actual_room_rate_f:,.2f}/day "
+                f"against an eligible policy room rent limit of Rs. {policy_room_limit_f:,.2f}/day. "
+                f"Total bill amount: Rs. {float(get_val(bill, 'total_amount', 0.0)):,.2f}. Insurer deducted Rs. {insurer_deduction:,.2f}."
+            )
+            applicable_policy_rule = (
+                "IRDAI Master Circular on Health Insurance Business (29 May 2024, Chapter V, Para 5.4): "
+                "Proportionate deduction is strictly limited to room-linked charges (nursing and room rent). "
+                "ICU, OT infrastructure, medicines/pharmacy, implants, and diagnostics are statutory protected heads immune from proportionate cuts."
+            )
+            insurer_applied_action = (
+                f"{tpa_name} executed proportionate deduction of Rs. {insurer_deduction:,.2f} by applying room rent "
+                "pro-rata reductions across non-associated medical categories and protected heads."
+            )
+            expected_action = (
+                f"Limit legitimate deduction strictly to Rs. {expected_total_deduction:,.2f} (room excess Rs. {total_room_excess:,.2f} "
+                f"+ room-linked proportionate reduction Rs. {proportionate_reduction:,.2f} + non-medical Rs. {misc_deductions:,.2f}) "
+                f"and restore Rs. {diff_amt:,.2f} in full to the claimant."
+            )
+            evidence_str = (
+                f"{hosp_name} Hospital Bill Room Charges (Rs. {actual_room_rate_f:,.2f}/day) vs "
+                f"{insurer_name} Policy Schedule ({pol_num}) Room Rent Limit (Rs. {policy_room_limit_f:,.2f}/day) "
+                f"and Settlement Advice ({claim_num})."
+            )
+        else:
+            actual_claim_fact = (
+                f"Hospital room rate of Rs. {actual_room_rate_f:,.2f}/day evaluated against eligible limit "
+                f"of Rs. {policy_room_limit_f:,.2f}/day. Insurer deducted Rs. {insurer_deduction:,.2f}."
+            )
+            applicable_policy_rule = "IRDAI Master Circular 2024 Para 5.4: Proportionate deduction applied within legitimate contractual limits."
+            insurer_applied_action = f"Insurer deducted Rs. {insurer_deduction:,.2f} in accordance with policy terms."
+            expected_action = "Maintain standard settlement as deductions are contractually and regulatorily valid."
+            evidence_str = f"{hosp_name} Bill and {pol_num} Policy Schedule terms verified."
+
         evidence_entry = None
         if state is not None and getattr(state, 'ledger', None) is not None:
             evidence_entry = state.ledger.record_calculation(
@@ -208,8 +377,17 @@ def check_proportionate_deduction(bill: HospitalBill, policy: InsurancePolicy, r
             monetary_impact=insurer_deduction - expected_total_deduction if is_fail else 0.0,
             regulatory_citation="IRDAI Master Circular on Health Insurance, May 2024",
             appeal_recommendation=appeal_rec,
+            actual_claim_fact=actual_claim_fact,
+            applicable_policy_rule=applicable_policy_rule,
+            insurer_applied_action=insurer_applied_action,
+            expected_action=expected_action,
+            difference=diff_amt,
+            evidence=evidence_str,
             evidence_entries=[evidence_entry] if evidence_entry else []
         )
 
     except Exception as e:
         return RuleVerdict(status="SKIPPED", rule_name="Proportionate Deduction Rule", rule_description="", confidence=1.0, finding=f"Error evaluating rule: {str(e)}")
+
+
+evaluate_proportionate_deduction = check_proportionate_deduction

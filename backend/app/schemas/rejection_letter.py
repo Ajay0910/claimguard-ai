@@ -5,6 +5,7 @@ from .provenance import Provenance
 class RejectionReason(BaseModel):
     code: Provenance[str]
     description: Provenance[str]
+    amount: Optional[Provenance[float]] = None
     details: Optional[Provenance[str]] = None
     clause_cited: Optional[Provenance[str]] = None
     category: Provenance[Literal["PROPORTIONATE_DEDUCTION", "WAITING_PERIOD", "PRE_EXISTING", "EXCLUSION", "DOCUMENT_INCOMPLETE", "MENTAL_HEALTH", "OTHER", "Non-Medical", "Sub-limit Exhausted", "Waiting Period"]]
@@ -15,6 +16,8 @@ class RejectionLetter(BaseModel):
     insurer_name: Optional[Provenance[str]] = None
     tpa_name: Optional[Provenance[str]] = None
     policyholder_name: Optional[Provenance[str]] = None
+    patient_name: Optional[Provenance[str]] = None
+    insured_name: Optional[Provenance[str]] = None
     policy_number: Optional[Provenance[str]] = None
     claim_number: Optional[Provenance[str]] = None
     claim_date: Optional[Provenance[str]] = None

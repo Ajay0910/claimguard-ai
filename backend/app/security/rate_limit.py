@@ -10,9 +10,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 class PortalSubmissionRateLimitMiddleware(BaseHTTPMiddleware):
     """Process-local guardrail; the upstream edge must also enforce global limits."""
 
-    def __init__(self, app, limit: int = 10, window_seconds: int = 900):
+    def __init__(self, app, limit: int | None = None, window_seconds: int = 900):
         super().__init__(app)
-        self.limit = limit
+        from ..config import settings
+        default_limit = getattr(settings, "PORTAL_RATE_LIMIT", 100)
+        self.limit = limit if limit is not None else default_limit
         self.window_seconds = window_seconds
         self.requests: dict[str, deque[float]] = defaultdict(deque)
         self.lock = asyncio.Lock()

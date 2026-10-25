@@ -9,12 +9,14 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
     VLM_PROVIDER: str = "anthropic"
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE_MB: int = 25
     MAX_SUBMISSION_SIZE_MB: int = 50
-    MAX_PENDING_ANALYSIS_JOBS: int = 4
+    MAX_PENDING_ANALYSIS_JOBS: int = 50
+    MAX_ANALYSIS_WORKERS: int = 4
+    PORTAL_RATE_LIMIT: int = 100
     MAX_DOCUMENT_PAGES: int = 30
     MAX_DOCUMENT_TOTAL_PIXELS: int = 40_000_000
     DEBUG: bool = False

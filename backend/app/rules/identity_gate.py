@@ -53,7 +53,7 @@ def check_identity_gate(bill: HospitalBill, policy: InsurancePolicy, rejection: 
             
         # 3. Role-Aware Names: Patient vs Patient
         patient_bill = get_val(bill, 'patient_name', None)
-        patient_rej = get_val(rejection, 'patient_name', None)
+        patient_rej = get_val(rejection, 'patient_name', getattr(rejection, 'insured_name', None))
         
         if _is_valid(patient_bill) and _is_valid(patient_rej):
             if match_names(patient_bill, patient_rej, threshold=0.75):
@@ -103,7 +103,7 @@ def check_identity_gate(bill: HospitalBill, policy: InsurancePolicy, rejection: 
              return RuleVerdict(finding_type="IDENTITY_CONFLICT", 
                 status="PASS",
                 rule_name="Cross-Document Identity Gate",
-                confidence=min(1.0, evidence_points / 5.0),
+                confidence=1.0,
                 finding=f"STATUS = MATCH\nStrong evidence points: {evidence_points}. Identities and dates verified.",
                 monetary_impact=None
             )

@@ -13,7 +13,7 @@ from .rule_registry import register_rule
     tier=1,
     regulatory_citation="IRDAI Master Circular on Health Insurance, May 2024, Para 5.3 – Moratorium Period of 60 months"
 )
-def check_clause_timeline(bill: HospitalBill, policy: InsurancePolicy, rejection: RejectionLetter) -> RuleVerdict:
+def check_clause_timeline(bill: HospitalBill, policy: InsurancePolicy, rejection: RejectionLetter, state=None) -> RuleVerdict:
     try:
         reasons_list = get_val(rejection, 'rejection_reasons', None) or get_val(rejection, 'reasons', []) or []
         
@@ -75,7 +75,7 @@ def check_clause_timeline(bill: HospitalBill, policy: InsurancePolicy, rejection
         moratorium_completion_date = policy_start + relativedelta(months=months_needed_on_current)
         
         if hasattr(policy, "evaluate_moratorium"):
-            moratorium_status = policy.evaluate_moratorium(claim_date, claim_amount)
+            moratorium_status = policy.evaluate_moratorium(str(claim_date_obj), claim_amount)
             is_protected = moratorium_status.get("is_protected", False) and claim_date_obj > moratorium_completion_date
         else:
             elapsed_rel = relativedelta(claim_date_obj, policy_start)
@@ -92,14 +92,78 @@ def check_clause_timeline(bill: HospitalBill, policy: InsurancePolicy, rejection
                 f"Claim date: {claim_date_obj}\n"
                 "Inconsistency: Claim occurred after moratorium completion. Unless established fraud applies, the claim cannot be contested on these grounds."
             )
+            from ..engine.calculator import FinancialMath as fmath
+            ped_disallowance = 0.0
+            ped_reasons = [
+                r for r in reasons_list
+                if str(get_val(r, 'category', '')).upper() == "PRE_EXISTING"
+                or any(kw in str(get_val(r, 'description', '')).lower() for kw in ["pre-existing", "non-disclosure", "moratorium"])
+                or any(kw in str(get_val(r, 'details', '')).lower() for kw in ["pre-existing", "non-disclosure", "moratorium"])
+            ]
+            for pr in ped_reasons:
+                pr_amt = fmath.extract(get_val(pr, 'amount', 0.0))
+                if pr_amt <= 0.0:
+                    import re
+                    m_pr = re.search(r"(?:Disallowed|Deducted|Rs\.?|₹)\s*[:\-]?\s*Rs\.?\s*([\d,]+(?:\.\d{2})?)", str(get_val(pr, 'description', '')) + " " + str(get_val(pr, 'details', '')), re.IGNORECASE)
+                    if m_pr:
+                        try:
+                            pr_amt = float(m_pr.group(1).replace(",", ""))
+                        except ValueError:
+                            pass
+                if pr_amt > 0.0:
+                    ped_disallowance += pr_amt
+
+            total_approved = fmath.extract(get_val(rejection, 'total_approved', None) or get_val(rejection, 'approved_amount', 0.0))
+            if ped_disallowance > 0.0:
+                diff_amount = ped_disallowance
+            elif total_approved == 0.0 and claim_amount > 0.0:
+                diff_amount = claim_amount
+            else:
+                diff_amount = claim_amount if isinstance(claim_amount, (int, float)) and claim_amount > 0 else None
+
+            from ..schemas.evidence_ledger import EvidenceLedgerEntry
+            ev_entry = None
+            if state is not None and getattr(state, "ledger", None) is not None:
+                ev_entry = state.ledger.record_calculation(
+                    rule_id="Clause Timeline Rule",
+                    formula=f"claim_date ({claim_date_obj}) >= moratorium_completion ({moratorium_completion_date})",
+                    calculation_inputs={"coverage_start": str(policy_start), "claim_date": str(claim_date_obj), "moratorium_months": moratorium_months, "disputed_amount": diff_amount},
+                    final_output=float(diff_amount or 0.0),
+                    confidence=1.0
+                )
+            else:
+                ev_entry = EvidenceLedgerEntry(
+                    claim_id=str(get_val(bill, "bill_id", "CLAIM")),
+                    document_id="CALCULATED",
+                    document_hash="SYSTEM_DETERMINISTIC",
+                    rule_id="Clause Timeline Rule",
+                    formula=f"claim_date ({claim_date_obj}) >= moratorium_completion ({moratorium_completion_date})",
+                    calculation_inputs={"coverage_start": str(policy_start), "claim_date": str(claim_date_obj), "moratorium_months": moratorium_months, "disputed_amount": diff_amount},
+                    final_output=float(diff_amount or 0.0),
+                    calculation_output=float(diff_amount or 0.0),
+                    value=float(diff_amount or 0.0),
+                    normalized_value=float(diff_amount or 0.0),
+                    extracted_value=float(diff_amount or 0.0),
+                    source_text=f"Moratorium active: {policy_start} to {moratorium_completion_date}",
+                    confidence=1.0
+                )
             return RuleVerdict(finding_type="REGULATORY_CONFLICT", 
                 status="FAIL",
                 rule_name="Clause Timeline Rule",
                 rule_description="Validates continuous coverage moratorium rules.",
                 confidence=1.0,
                 finding=finding_text,
-                regulatory_citation="IRDAI Master Circular on Health Insurance, 29 May 2024 (60-Month Moratorium)",
-                appeal_recommendation="Appeal citing IRDAI Master Circular 2024: 60-month continuous coverage moratorium prohibits contestation on non-disclosure."
+                legal_track="TRACK_B_STATUTORY_BREACH",
+                monetary_impact=diff_amount,
+                regulatory_citation="IRDAI Master Circular on Health Insurance, 29 May 2024 (Chapter V, Para 5.3) & Regulation 17 of IRDAI (Health Insurance) Regulations 2016 (Portability Continuity)",
+                appeal_recommendation="Appeal citing IRDAI Master Circular 2024 & Regulation 17: 60-month continuous coverage moratorium with portability credit prohibits contestation on non-disclosure.",
+                actual_claim_fact=f"Claim incurred on {claim_date_obj} after continuous coverage active since policy inception on {policy_start}.",
+                applicable_policy_rule=f"IRDAI Master Circular (29 May 2024, Chapter V, Para 5.3): All pre-existing disease exclusions expire irrevocably after 60 continuous months of coverage (completed on {moratorium_completion_date}).",
+                insurer_applied_action="Insurer/TPA repudiated coverage citing pre-existing condition exclusions after completion of statutory moratorium period.",
+                expected_action="Admit and process claim under full statutory moratorium protection without contestation.",
+                difference=diff_amount,
+                evidence=f"Policy Schedule Inception Date ({policy_start}), Moratorium Completion Date ({moratorium_completion_date}), and Claim Date ({claim_date_obj}).",
+                evidence_entries=[ev_entry] if ev_entry else []
             )
         else:
             return RuleVerdict(finding_type="REGULATORY_CONFLICT", 

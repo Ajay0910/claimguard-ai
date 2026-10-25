@@ -19,7 +19,7 @@ class RuleVerdict(BaseModel):
     monetary_impact: Optional[float] = None
     regulatory_citation: Optional[str] = None
     appeal_recommendation: Optional[str] = None
-    legal_track: Optional[Literal["TRACK_A_ARITHMETIC_BREACH", "TRACK_B_ULTRA_VIRES_CLAUSE", "TRACK_C_VALID_DEDUCTION", "NOT_APPLICABLE"]] = "NOT_APPLICABLE"
+    legal_track: Optional[Literal["TRACK_A_ARITHMETIC_BREACH", "TRACK_B_ULTRA_VIRES_CLAUSE", "TRACK_B_STATUTORY_BREACH", "TRACK_C_VALID_DEDUCTION", "NOT_APPLICABLE"]] = "NOT_APPLICABLE"
     evidence_entry_ids: list[str] = []
     evidence_entries: list[EvidenceLedgerEntry] = []
     
@@ -58,8 +58,10 @@ class RuleVerdict(BaseModel):
 
     @model_validator(mode='after')
     def enforce_evidence_ledger(self) -> 'RuleVerdict':
-        # Skip evidence requirements for non-findings
-        if self.status in ["BLOCKED", "SKIPPED", "NOT_APPLICABLE"]:
+        # Skip evidence requirements for non-findings and passing checks
+        if self.status in ["PASS", "BLOCKED", "SKIPPED", "NOT_APPLICABLE"]:
+            return self
+        if self.finding_type == "NO_ISSUE" and not self.monetary_impact:
             return self
             
         if not self.evidence_entries:

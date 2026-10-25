@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select, update
 from typing import Optional
+import asyncio
 import uuid
 from datetime import datetime
 
@@ -17,6 +18,8 @@ from ..config import settings
 
 router = APIRouter(prefix='/api', tags=['analysis'], dependencies=[Depends(require_staff_access)])
 
+_active_pipeline_tasks: set = set()
+
 
 async def _broadcast_claim_status(claim_id: str, status_value: str) -> None:
     from .portal import manager
@@ -31,8 +34,10 @@ async def _broadcast_claim_status(claim_id: str, status_value: str) -> None:
 def suppress_financial_conclusion_when_review_needed(analysis_result: AnalysisResult) -> None:
     if analysis_result.overall_status == "EXTRACTION_FAILED":
         return
+    has_actionable_findings = any(v.status == "FAIL" for v in analysis_result.rule_verdicts)
     unresolved = any(
         verdict.status in {"NEEDS_REVIEW", "CONFLICT", "BLOCKED", "INSUFFICIENT_EVIDENCE"}
+        and (verdict.rule_name != "Cross-Document Adjudication" or not has_actionable_findings)
         for verdict in analysis_result.rule_verdicts
     )
     if not unresolved:
@@ -172,7 +177,8 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
                 await _broadcast_claim_status(claim_id, "ANALYZING")
                 # 3. Rule engine
                 engine = RuleEngine()
-                analysis_result = engine.run_all_rules(
+                analysis_result = await asyncio.to_thread(
+                    engine.run_all_rules,
                     bill=extracted_bill,
                     policy=extracted_policy,
                     rejection=extracted_rejection,
@@ -198,7 +204,7 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
             # Run Forensics Engine
             from ..forensics.engine import ForensicsEngine
             forensics_engine = ForensicsEngine()
-            forensics_res = forensics_engine.run(documents, bill=extracted_bill)
+            forensics_res = await asyncio.to_thread(forensics_engine.run, documents, bill=extracted_bill)
             forensics_dict = forensics_res.model_dump(mode='json') if hasattr(forensics_res, "model_dump") else (forensics_res.dict() if hasattr(forensics_res, "dict") else forensics_res)
             
             # 4. Store results
@@ -247,25 +253,35 @@ async def run_analysis_pipeline(claim_id: str, analysis_run_id: str):
         except Exception as e:
             import logging
             logging.getLogger(__name__).error("Analysis pipeline failed for claim %s (%s: %s)", claim_id, type(e).__name__, getattr(e, "name", ""))
-            await db.rollback()
-            # Mark as failed in a new transaction
-            async with AsyncSessionLocal() as session2:
-                result_query = await session2.execute(select(AnalysisRun).where(AnalysisRun.id == analysis_run_id))
-                analysis_run = result_query.scalar_one_or_none()
-                if analysis_run:
-                    analysis_run.status = "FAILED"
-                    analysis_run.completed_at = datetime.utcnow()
-                    session2.add(analysis_run)
-                
-                claim_query = await session2.execute(select(Claim).where(Claim.id == claim_id))
-                claim = claim_query.scalar_one_or_none()
-                if claim:
-                    claim.status = "FAILED"
-                    session2.add(claim)
-                    
-                await AuditTrail.log(session2, claim_id, "ANALYSIS_FAILED", {"error_type": type(e).__name__})
-                await session2.commit()
-                await _broadcast_claim_status(claim_id, "FAILED")
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            # Mark as failed in a new transaction (retry up to 3 times on transient DB lock)
+            for attempt in range(3):
+                try:
+                    async with AsyncSessionLocal() as session2:
+                        result_query = await session2.execute(select(AnalysisRun).where(AnalysisRun.id == analysis_run_id))
+                        analysis_run = result_query.scalar_one_or_none()
+                        if analysis_run:
+                            analysis_run.status = "FAILED"
+                            analysis_run.completed_at = datetime.utcnow()
+                            session2.add(analysis_run)
+                        
+                        claim_query = await session2.execute(select(Claim).where(Claim.id == claim_id))
+                        claim = claim_query.scalar_one_or_none()
+                        if claim:
+                            claim.status = "FAILED"
+                            session2.add(claim)
+                            
+                        await AuditTrail.log(session2, claim_id, "ANALYSIS_FAILED", {"error_type": type(e).__name__})
+                        await session2.commit()
+                        await _broadcast_claim_status(claim_id, "FAILED")
+                        break
+                except Exception as commit_exc:
+                    if attempt == 2:
+                        raise commit_exc
+                    await asyncio.sleep(0.1 * (attempt + 1))
 
 @router.post('/analyze/{claim_id}')
 @serialize_analysis_admission
@@ -318,6 +334,7 @@ async def trigger_analysis(
         id=analysis_run_id,
         claim_id=claim_id,
         status="PENDING",
+        total_monetary_impact=0.0,
         started_at=datetime.utcnow()
     )
     db.add(run)
@@ -361,7 +378,9 @@ async def resume_analysis_jobs():
         await db.commit()
     import asyncio
     for run_id, claim_id in jobs:
-        asyncio.create_task(run_analysis_pipeline(claim_id, run_id))
+        task = asyncio.create_task(run_analysis_pipeline(claim_id, run_id))
+        _active_pipeline_tasks.add(task)
+        task.add_done_callback(_active_pipeline_tasks.discard)
 
 @router.get('/analyze/{claim_id}/status')
 async def get_analysis_status(claim_id: str, db: AsyncSession = Depends(get_db)) -> dict:

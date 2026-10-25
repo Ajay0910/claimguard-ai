@@ -231,6 +231,7 @@ def generate_hospital_bill(output_path: str):
         [Paragraph("25", styles['TableCellCenter']), Paragraph("Complete Metabolic Panel series, ABG, Blood Cultures & Coagulation", styles['TableCell']), Paragraph("DIAGNOSTICS", styles['TableCell']), Paragraph("1", styles['TableCellCenter']), Paragraph("11,500.00", styles['TableCellRight']), Paragraph("999315", styles['TableCellCenter']), Paragraph("11,500.00", styles['TableCellRightBold'])],
         [Paragraph("26", styles['TableCellCenter']), Paragraph("Admission Administrative Registration & Bio-hazard Disposal Fee", styles['TableCell']), Paragraph("NON_MEDICAL", styles['TableCell']), Paragraph("1", styles['TableCellCenter']), Paragraph("2,500.00", styles['TableCellRight']), Paragraph("999319", styles['TableCellCenter']), Paragraph("2,500.00", styles['TableCellRightBold'])],
         [Paragraph("27", styles['TableCellCenter']), Paragraph("Patient Care Toiletries Kit, Slippers & Sanitizer Kit (List I)", styles['TableCell']), Paragraph("NON_MEDICAL", styles['TableCell']), Paragraph("1", styles['TableCellCenter']), Paragraph("1,500.00", styles['TableCellRight']), Paragraph("999319", styles['TableCellCenter']), Paragraph("1,500.00", styles['TableCellRightBold'])],
+        [Paragraph("28", styles['TableCellCenter']), Paragraph("Emergency Triage, Resuscitation & Surgical Clearance Fee", styles['TableCell']), Paragraph("CONSULTATION", styles['TableCell']), Paragraph("1", styles['TableCellCenter']), Paragraph("11,000.00", styles['TableCellRight']), Paragraph("999312", styles['TableCellCenter']), Paragraph("11,000.00", styles['TableCellRightBold'])],
     ]
 
     t_p2 = Table(items_p2, colWidths=[20, 245, 70, 25, 55, 45, 63])
@@ -358,9 +359,9 @@ def generate_insurance_policy(output_path: str):
             Paragraph("<b>Total Policy Sum Insured:</b> Rs. 12,50,000.00", styles['TableCellBold']),
         ],
         [
-            Paragraph("<b>Room Entitlement:</b> Single Private A/C Room", styles['TableCellBold']),
+            Paragraph("<b>Room Entitlement & Rent Limit:</b> Single Private A/C Room (Rs. 6,000.00 / day)", styles['TableCellBold']),
             Paragraph("<b>ICU Limit:</b> Covered At Actuals (No Sub-limit)", styles['TableCell']),
-            Paragraph("<b>Co-Payment:</b> 10% on Admissible Claim", styles['TableCell']),
+            Paragraph("<b>Co-Payment & Deductible:</b> 10% Co-Pay | Deductible: Nil", styles['TableCell']),
         ]
     ]
     t_sched = Table(sched_data, colWidths=[180, 180, 163])

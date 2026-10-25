@@ -188,18 +188,77 @@ class ReportGenerator:
         pdf.output(output_path)
         return output_path
 
-    def generate_ombudsman_form_via(self, complaint_data: dict, output_pdf_path: Optional[str] = None) -> dict:
+    def generate_ombudsman_form_via(
+        self,
+        complaint_data_or_analysis: Any,
+        bill: Any = None,
+        policy: Any = None,
+        rejection: Any = None,
+        pincode: Optional[str] = None,
+        output_pdf_path: Optional[str] = None
+    ) -> dict:
         """
         Generate statutory Insurance Ombudsman Form VI-A text and optional PDF.
+        Supports both direct complaint_data dict and model-based signature:
+        (analysis_res, bill, policy, rejection, pincode, output_pdf_path)
         """
+        import datetime
         from .ombudsman_form_generator import OmbudsmanFormGenerator, map_pincode_to_ombudsman
         generator = OmbudsmanFormGenerator()
+
+        def _val(obj, attr, default=""):
+            if not obj:
+                return default
+            v = getattr(obj, attr, None)
+            if v is None and isinstance(obj, dict):
+                v = obj.get(attr)
+            if hasattr(v, 'value'):
+                return v.value if v.value is not None else default
+            return v if v is not None else default
+
+        if isinstance(complaint_data_or_analysis, dict) and bill is None and policy is None and rejection is None:
+            complaint_data = dict(complaint_data_or_analysis)
+        else:
+            analysis = complaint_data_or_analysis
+            patient_name = _val(bill, 'patient_name') or _val(policy, 'policyholder_name') or "Insured / Policyholder"
+            insurer = _val(policy, 'insurer_name') or _val(rejection, 'insurer_name') or "Insurance Company Ltd."
+            pol_num = _val(policy, 'policy_number') or "POL-XXXXXX"
+            claim_num = _val(rejection, 'claim_number') or "CLM-XXXXXX"
+            rep_date = _val(rejection, 'claim_date') or str(datetime.date.today().isoformat())
+            
+            disputed = 0.0
+            if hasattr(analysis, 'total_monetary_impact') and analysis.total_monetary_impact is not None:
+                disputed = float(analysis.total_monetary_impact)
+            elif isinstance(analysis, dict):
+                disputed = float(analysis.get('total_monetary_impact') or 0.0)
+
+            grounds = []
+            verdicts = getattr(analysis, 'rule_verdicts', []) if hasattr(analysis, 'rule_verdicts') else (analysis.get('rule_verdicts', []) if isinstance(analysis, dict) else [])
+            for v in verdicts:
+                status = getattr(v, 'status', None) or (v.get('status') if isinstance(v, dict) else None)
+                finding = getattr(v, 'finding', None) or (v.get('finding') if isinstance(v, dict) else "")
+                if status == "FAIL" and finding:
+                    grounds.append(str(finding))
+            grounds_text = "; ".join(grounds) if grounds else "Unlawful deduction and statutory breach of IRDAI regulations."
+
+            complaint_data = {
+                "complainant_name": patient_name,
+                "complainant_address": _val(bill, 'hospital_address', "Resident Address"),
+                "pincode": pincode or "400001",
+                "insurer_name": insurer,
+                "policy_number": pol_num,
+                "claim_number": claim_num,
+                "repudiation_date": rep_date,
+                "disputed_amount": disputed,
+                "grounds_summary": grounds_text
+            }
+
         form_text = generator.generate_form_via_text(complaint_data)
         pdf_path = None
         if output_pdf_path:
             pdf_path = generator.generate_form_via_pdf(complaint_data, output_pdf_path)
-        pincode = str(complaint_data.get("pincode", "400001"))
-        jurisdiction = map_pincode_to_ombudsman(pincode)
+        resolved_pin = str(complaint_data.get("pincode", pincode or "400001"))
+        jurisdiction = map_pincode_to_ombudsman(resolved_pin)
         return {
             "form_text": form_text,
             "pdf_path": pdf_path,

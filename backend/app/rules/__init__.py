@@ -1,10 +1,15 @@
 # Init file for rules
 def get_val(obj, attr, default=None):
-    val = getattr(obj, attr, default)
+    if isinstance(obj, dict):
+        val = obj.get(attr, default)
+    else:
+        val = getattr(obj, attr, default)
     if val is None:
         val = default
     if hasattr(val, 'value'):
         return val.value
+    if isinstance(val, dict) and 'value' in val:
+        return val['value']
     return val
 
 from .engine import RuleEngine

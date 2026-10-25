@@ -1,4 +1,5 @@
 import json
+import re
 import base64
 import os
 from typing import Union, Any
@@ -12,7 +13,7 @@ class VLMExtractor:
         self.provider = provider.lower()
         self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o")
         self.anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620")
-        self.gemini_model = model or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+        self.gemini_model = model or os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
         
         if self.provider == 'anthropic':
             import anthropic
@@ -134,7 +135,11 @@ class VLMExtractor:
         prompt_text = f"Extract the requested information from this document. Return ONLY valid JSON matching this exact JSON schema (do not hallucinate fields, ensure required fields are present):\n{schema_json}"
         response = model.generate_content([*images, prompt_text])
         
-        data = json.loads(response.text)
+        raw_text = response.text.strip()
+        if raw_text.startswith("```"):
+            raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
+            raw_text = re.sub(r"\s*```$", "", raw_text)
+        data = json.loads(raw_text)
         return schema_class.model_validate(data)
 
     def extract_hospital_bill(self, image_bytes: bytes, mime_type: str) -> HospitalBill:
