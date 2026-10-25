@@ -77,5 +77,7 @@ def get_cors_origins(config: Settings = settings) -> list[str]:
     """Return configured origins without whitespace or wildcard fallback."""
     origins = [origin.strip().rstrip("/") for origin in config.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
     if not origins or "*" in origins:
-        raise RuntimeError("CORS_ALLOWED_ORIGINS must list one or more explicit origins")
+        if config.APP_ENV.strip().lower() == "production":
+            raise RuntimeError("CORS_ALLOWED_ORIGINS must list one or more explicit origins")
+        return ["*"]
     return origins
